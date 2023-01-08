@@ -1,8 +1,7 @@
 Function A: # FunctionNode
-    # ForkNode
-    if a == 1: # Branch
+    if a == 1: #ForkNode # Branch
         Function B # FunctionNode
-    elif a == 2: # Branch # SeriesNode
+    elif a == 2: # Branch
         for i = [0:10] by 1: # IterationNode
             Function C # FunctionNode
             Function D: # FunctionNode

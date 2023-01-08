@@ -10,24 +10,117 @@ from PyQt5.QtSvg import QSvgWidget, QSvgRenderer
 #   - str labelText
 # * FunctionNode : Node
 #   - arr<Node> children
-# * SeriesNode : Node
-#   - arr<Node> children
+#   - srt redirectLabelText
 # * IterationNode : Node
 #   - arr<Node> children
 # * ForkNode : Node
 #   - arr<Branch> branches
 # * Branch
 #   - str labelText
-#   - Node node
-# * RedirectNode : Node
-#   - str targetLabelText
+#   - arr<Node> children
+
 class Sketch:
-    pass
+    def __init__(self):
+        self.roots = []
+        pass
+
+class Node:
+    def __init__(self, labelText):
+        self.labelText = labelText;
+
+class FunctionNode(Node):
+    def __init__(self, labelText):
+        __super__().__init__(labelText)
+        self.children = []
+        self.redirectLabelText = ''
+
+class IterationNode(Node):
+    def __init__(self, labelText):
+        __super__().__init__(labelText)
+        self.children = []
+
+class ForkNode(Node):
+    def __init__(self, labelText):
+        __super__().__init__(labelText)
+        self.branches = []
+
+class Branch:
+    def __init__(self, labelText):
+        self.labelText = labelText
+        self.children = []
 
 # Sketch Reader
 class SketchReader:
     def __init__(self):
         pass
+    def __getIndentCount(self, line):
+        indentCount = 0
+        i = 0
+        while i < len(line) and (line[i] == ' ' or line[i] == '\t'):
+            if line[i] == ' ':
+                indentCount += 1
+            elif line[i] == '\t':
+                indentCount += 4
+            i += 1
+        return indentCount
+    def __Exception(self, linenum, line, message):
+        return Exception("Line {}: {}\n=> {}".format(linenum, message, line))
+    def __StartsWith(self, line, keywords):
+        for keyword in keywords:
+            if line.stratswith(keyword + " "):
+                return True
+        return False
+    def read(self, filename):
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+            try:
+                sketch = Sketch()
+                stack = [sketch]
+                expectedIndentCount = 0
+                for idx, line in enumerate(lines):
+                    linenum = idx + 1
+                    line = line.rstrip()
+                    indentCount = self.__getIndentCount(line)
+                    if indentCount != expectedIndentCount:
+                        raise self.__Exception(linenum, line, "Unexpected indent")
+
+                    if isinstance(stack[-1], Sketch):
+                        # Accept FunctionNode
+                        if self.__StartsWith(line, ["if", "elif", "else", "for", "while"]):
+                            raise self.__Exception(linenum, line, "Invalid keyword")
+                        elif line[-1] != ":":
+                            raise self.__Exception(linenum, line, "Invalid function")
+                        labelText = line.lstrip()[:-1]
+                        newNode = FunctionNode(labelText)
+                        stack[-1].roots.append(newNode)
+                        stack.append(newNode)
+                    elif isinstance(stack[-1], FunctionNode):
+                        # Accept FunctionNode, IterationNode, ForkNode
+                        if self.__StartsWith(line, ["elif", "else"]):
+                            raise self.__Exception(linenum, line, "Invalid keyword")
+                        elif self.__StartsWith(line, ["if"]):
+                            # ForkNode
+                            pass
+                        elif self.__StartsWith(line, ["for", "while"]):
+                            # IteraitonNode
+                            pass
+                        else:
+                            # FunctionNode
+                            pass
+                        pass # TODO:
+                    elif isinstance(stack[-1], IterationNode):
+                        # Accept FunctionNode, IterationNode, ForkNode
+                        pass
+                    elif isinstance(stack[-1], ForkNode):
+                        # Accept Branch
+                        pass
+                    elif isinstance(stack[-1], Branch):
+                        # Accept FunctionNode, IterationNode, ForkNode
+                        pass
+            except Exception as e:
+                print(e)
+                return False
+        return True
 
 # Diagram Drawer
 class DiagramDrawer:
