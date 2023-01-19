@@ -70,53 +70,127 @@ class SketchReader:
             if line.stratswith(keyword + " "):
                 return True
         return False
+
+    def __makeFunctionNode(self, linenum, line):
+        text = line.lstrip()
+        hasChild = text[-1] == ':'
+        text = text[:-1] if hasChild else text
+        labelText = text
+        newNode = FunctionNode(labelText)
+        
+        # check redirect
+        if "=>" in line:
+            if hasChild:
+                raise self.__Exception(linenum, line, "Function with redirect cannot has children")
+            elif not " => " in line:
+                raise self.__Exception(linenum, line, "Redirect sign should be independent word")
+            elif line.endswith(" => :") in line:
+                raise self.__Exception(linenum, line, "Redirect label should be provided")
+            labelTextEndIdx = text.find(" => ")
+            newNode.labelText = text[:labelTextEndIdx].strip()
+            redirectLabelTextStartIdx = labelTextEndIdx + len(" => ")
+            newNode.redirectLabelText = text[redirectLabelTextStartIdx:].strip()
+
+        return (newNode, hasChild)
+
+    def __makeForkNode(self, linenum, line):
+        text = line.lstrip()
+        hasChild = text[-1] == ':'
+        if not hasChild:
+            raise self.__Exception(linenum, line, "It should have children")
+        text = text[:-1]
+        labelText = text
+        newNode = ForkNode(labelText)
+        
+        # check redirect
+        if "=>" in line:
+            raise self.__Exception(linenum, line, "Invalid redirect sign")
+
+        return newNode
+
+    def __makeBranch(self, linenum, line):
+        text = line.lstrip()
+        hasChild = text[-1] == ':'
+        if not hasChild:
+            raise self.__Exception(linenum, line, "It should have children")
+        text = text[:-1]
+        labelText = text
+        newNode = Branch(labelText)
+        
+        # check redirect
+        if "=>" in line:
+            raise self.__Exception(linenum, line, "Invalid redirect sign")
+
+        return newNode
+
     def read(self, filename):
         with open(filename, 'r') as f:
             lines = f.readlines()
             try:
                 sketch = Sketch()
-                stack = [sketch]
-                expectedIndentCount = 0
+                nodeStack = [sketch]
+                indentStack = [0]
+                currentIndent = 0
                 for idx, line in enumerate(lines):
                     linenum = idx + 1
                     line = line.rstrip()
-                    indentCount = self.__getIndentCount(line)
-                    if indentCount != expectedIndentCount:
-                        raise self.__Exception(linenum, line, "Unexpected indent")
+                    indent = self.__getIndentCount(line)
 
-                    if isinstance(stack[-1], Sketch):
+                    topIndent = indentStack[-1]
+                    topNode = nodeStack[-1]
+                    # Check indent
+                    if isinstance(topNode, Sketch):
+                        if indent != currentIndent:
+                            raise self.__Exception(linenum, line, "Invalid indent")
+                    else:
+                        if currentIndent == -1:
+                            currentIndent = indent
+                        elif indent < currentIndent:
+                            # pop stacks
+                            del nodeStack[-1]
+                            del indentStack[-1]
+                        elif indent > currentIndent:
+                            raise self.__Exception(linenum, line, "Invalid indent")
+                        indentStack.append(indent)
+                    
+                    topNode = nodeStack[-1]
+
+                    # Check line
+                    if isinstance(topNode, Sketch):
                         # Accept FunctionNode
                         if self.__StartsWith(line, ["if", "elif", "else", "for", "while"]):
                             raise self.__Exception(linenum, line, "Invalid keyword")
-                        elif line[-1] != ":":
-                            raise self.__Exception(linenum, line, "Invalid function")
-                        labelText = line.lstrip()[:-1]
-                        newNode = FunctionNode(labelText)
-                        stack[-1].roots.append(newNode)
-                        stack.append(newNode)
-                    elif isinstance(stack[-1], FunctionNode):
+                        newNode, needPush = self.__makeFunctionNode(linenum, line)
+                        topNode.roots.append(newNode)
+                        if needPush:
+                            nodeStack.append(newNode)
+                            currentIndent = -1
+                    else:
+                        # in case of topNode in [FunctionNode, IterationNode, Branch]. ForkNode will not reach here
                         # Accept FunctionNode, IterationNode, ForkNode
                         if self.__StartsWith(line, ["elif", "else"]):
+                            # TODO:
                             raise self.__Exception(linenum, line, "Invalid keyword")
-                        elif self.__StartsWith(line, ["if"]):
+                        if self.__StartsWith(line, ["if"]):
                             # ForkNode
+                            newNode = self.__makeForkNode(linenum, line)
+                            topNode.children.append(newNode)
+                            nodeStack.append(newNode)
+
+                            newNode = self.__MakeBranch(linenum, line)
+                            topNode.children.append(newNode)
+                            nodeStack.append(newNode)
+                            currentIndent = -1
                             pass
                         elif self.__StartsWith(line, ["for", "while"]):
+                            # TODO:
                             # IteraitonNode
                             pass
                         else:
+                            # TODO:
                             # FunctionNode
+                            newNode, needPush = self.__makeFunctionNode(linenum, line)
                             pass
-                        pass # TODO:
-                    elif isinstance(stack[-1], IterationNode):
-                        # Accept FunctionNode, IterationNode, ForkNode
-                        pass
-                    elif isinstance(stack[-1], ForkNode):
-                        # Accept Branch
-                        pass
-                    elif isinstance(stack[-1], Branch):
-                        # Accept FunctionNode, IterationNode, ForkNode
-                        pass
             except Exception as e:
                 print(e)
                 return False
