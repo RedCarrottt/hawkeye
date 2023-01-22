@@ -131,6 +131,7 @@ class SketchReader:
                 nodeStack = [sketch]
                 indentStack = [0]
                 currentIndent = 0
+                # Parse each line
                 for idx, line in enumerate(lines):
                     linenum = idx + 1
                     line = line.rstrip()
@@ -138,6 +139,7 @@ class SketchReader:
 
                     topIndent = indentStack[-1]
                     topNode = nodeStack[-1]
+
                     # Check indent
                     if isinstance(topNode, Sketch):
                         if indent != currentIndent:
@@ -157,7 +159,7 @@ class SketchReader:
 
                     # Check line
                     if isinstance(topNode, Sketch):
-                        # Accept FunctionNode
+                        # Top == Sketch -> ACCEPT FunctionNode
                         if self.__StartsWith(line, ["if", "elif", "else", "for", "while"]):
                             raise self.__Exception(linenum, line, "Invalid keyword")
                         newNode, needPush = self.__makeFunctionNode(linenum, line)
@@ -168,6 +170,7 @@ class SketchReader:
                     else:
                         # in case of topNode in [FunctionNode, IterationNode, Branch]. ForkNode will not reach here
                         # Accept FunctionNode, IterationNode, ForkNode
+                        # Top == [FuncitonNode, IterationNode, ForkNode] 
                         if self.__StartsWith(line, ["elif", "else"]):
                             # TODO:
                             raise self.__Exception(linenum, line, "Invalid keyword")
