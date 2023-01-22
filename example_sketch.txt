@@ -4,8 +4,7 @@ Function A: # FunctionNode
     elif a == 2: # Branch
         for i = [0:10] by 1: # IterationNode
             Function C # FunctionNode
-            Function D: # FunctionNode
-                 to Function D
+            Function D => Function D # FunctionNode
         Function G # FunctionNode
 Function D:
     Function E

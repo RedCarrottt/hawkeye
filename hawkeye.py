@@ -4,21 +4,6 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout
 from PyQt5.QtSvg import QSvgWidget, QSvgRenderer
 
-# * Sketch
-#   - arr<FunctionNode> roots
-# * Node
-#   - str labelText
-# * FunctionNode : Node
-#   - arr<Node> children
-#   - srt redirectLabelText
-# * IterationNode : Node
-#   - arr<Node> children
-# * ForkNode : Node
-#   - arr<Branch> branches
-# * Branch
-#   - str labelText
-#   - arr<Node> children
-
 class Sketch:
     def __init__(self):
         self.roots = []

@@ -1,0 +1,254 @@
+import copy
+
+# * Sketch
+#   - arr<FunctionNode> roots
+# * Node
+#   - str labelText
+# * FunctionNode : Node
+#   - arr<Node> children
+#   - srt redirectLabelText
+# * IterationNode : Node
+#   - arr<Node> children
+# * ForkNode : Node
+#   - arr<Branch> children
+# * Branch
+#   - str labelText
+#   - arr<Node> children
+
+class Sketch:
+    def __init__(self):
+        self.roots = []
+        pass
+
+class Node:
+    def __init__(self, indent, labelText):
+        self.indent = indent
+        self.child_indent = -1
+        self.labelText = labelText
+        self.children = []
+
+class FunctionNode(Node):
+    def __init__(self, indent, labelText, redirectLabelText):
+        __super__().__init__(indent, labelText)
+        self.redirectLabelText = redirectLabelText
+
+class IterationNode(Node):
+    def __init__(self, indent, labelText):
+        __super__().__init__(indent, labelText)
+
+class ForkNode(Node):
+    def __init__(self, indent):
+        __super__().__init__(indent, "")
+
+class Branch(Node):
+    def __init__(self, indent, labelText):
+        __super__().__init__(indent, labelText) 
+        self.indent = indent
+        self.labelText = labelText
+
+def __getIndentCount(self, line):
+    indentCount = 0
+    i = 0
+    while i < len(line) and (line[i] == ' ' or line[i] == '\t'):
+        if line[i] == ' ':
+            indentCount += 1
+        elif line[i] == '\t':
+            indentCount += 4
+        i += 1
+    return indentCount
+def __StartsWith(self, line, keywords):
+    for keyword in keywords:
+        if line.stratswith(keyword + " "):
+            return True
+    return False
+
+def __raise_exception(linenum, line, message):
+    return Exception("Line {}: {}\n=> {}".format(linenum, message, line))
+
+def __raise_exception2(linenum, message):
+    return Exception("Line {}: {}".format(linenum, message))
+
+def __preprocess(orig_lines):
+    strip_lines = []
+    for line in orig_lines:
+        # remove comments
+        comment_idx = line.find('#')
+        strip_line = line[:comment_idx] if comment_idx >= 0 else line
+
+        # strip right spaces
+        strip_line = strip_line.rstrip()
+
+        strip_lines.append(strip_line)
+    return strip_lines
+
+def __parse(strip_lines):
+    tokens = []
+    for linenum, line in enumerate(strip_lines):
+        word_start_idx = 0
+
+        # INDENT_T or INDENT_S
+        while word_start_idx < len(line):
+            if line[word_start_idx] == '\t':
+                tokens.append(["INDENT_T"])
+            elif line[word_start_idx] == ' ':
+                tokens.append(["INDENT_S"])
+            else:
+                break
+            word_start_idx += 1
+
+        # filter END_COLON
+        end_colon_found = (line[-1] == ':')
+        if end_colon_found:
+            line = line[:-1]
+
+        # WORDs or REDIRECT
+        words = line[word_start_idx:].split()
+        if len(words) > 0:
+            redirect_found = False
+            word_found = False
+            word_after_redirect_found = False
+            for word in words:
+                if word == '=>':
+                    if not word_found:
+                        __raise_exception(linenum, line, "Redirection sign must not be used at the start")
+                    elif end_colon_found:
+                        __raise_exception(linenum, line, "Redirection sign must be used without colon at the end")
+                    elif redirect_found:
+                        __raise_exception(linenum, line, "Redirection sign must be used once")
+                    redirect_found = True
+                    tokens.append(["REDIRECT"])
+                else:
+                    word_found = True
+                    if redirect_found:
+                        word_after_redirect_found = True
+                    tokens.append(["WORD", word])
+                if redirect_found and not word_after_redirect_found:
+                    __raise_exception(linenum, line, "At least a word must follow the redirection sign")
+
+        # END_COLON
+        if end_colon_found:
+            tokens.append(["END_COLON"])
+
+        # NEWLINE
+        tokens.append(["NEWLINE"])
+    return tokens
+
+def __analyze_syntax(tokens):
+    sketch = Sketch()
+    nodeStack = [sketch]
+
+    initial_line = {
+        'indent': 0,
+        'words_before_redirect': [],
+        'words_after_redirect': [],
+        'keyword': None,
+        'end_colon': False,
+
+        'keyword_check': False,
+        'redirect_found': False
+    }
+    line = copy.deepcopy(initial_line)
+    i = 0
+    linenum = 1
+    while i < len(tokens):
+        token = tokens[i]
+        if token != 'NEWLINE':
+            if token == 'INDENT_S':
+                line['indent'] += 1
+            elif token == 'INDENT_T':
+                line['indent'] += 4
+            elif token == 'END_COLON':
+                line['end_colon'] = True
+            else token == 'REDIRECT':
+                line['redirect_found'] = True
+            elif token == 'WORD':
+                if not line['keyword_check']:
+                    line['keyword_check'] = True
+                    if token in ['if', 'elif', 'else', 'for', 'while']:
+                        line['keyword'] = token
+                        continue
+                if not line['words_after_redirect']:
+                    line['words_before_redirect'].append(token)
+                else:
+                    line['words_after_redirect'].append(token)
+        else:
+            # NEWLINE
+            keyword = line['keyword']
+            indent = line['indent']
+            topNode = nodeStack[-1]
+            newNode = None
+
+            # Check indent
+            if isinstance(topNode, Sketch):
+                if indent != 0:
+                    __raise_exception2(linenum, "Invalid indent")
+            else:
+                if topNode.child_indent < 0:
+                    if indent <= topNode.indent:
+                        __raise_exception2(linenum, "Invalid indent")
+                    topNode.child_indent = indent
+                else:
+                    if indent == topNode.indent:
+                        # pop
+                        nodeStack = nodeStack[:-1]
+                        topNode = nodeStack[-1]
+                        if isinstance(topNode, ForkNode):
+                            if keyword and not keyword in ['elif', 'else']:
+                            nodeStack = nodeStack[:-1]
+                            topNode = nodeStack[-1]
+                    elif indent != topNode.child_indent:
+                        __raise_exception2(linenum, "Invalid indent")
+
+            # Check keyword
+            text = ' '.join(line['words_before_redirect'])
+            redirect_text = ' '.join(line['words_after_redirect'])
+            if keyword is None:
+                # FunctionNode
+                newNode = FunctionNode(indent, text, redirect_text)
+                topNode.children.append(newNode)
+            elif keyword == 'if':
+                # ForkNode + Branch
+                if len(redirect_text) > 0:
+                    __raise_exception2(linenum, "Invalid redirection sign")
+                forkNode = ForkNode(indent)
+                nodeStack.append(forkNode)
+                newNode = Branch(indent, text)
+                topNode.children.append(forkNode)
+                forkNode.children.append(newNode)
+            elif keyword in ['elif', 'else']:
+                # Branch
+                if len(redirect_text) > 0:
+                    __raise_exception2(linenum, "Invalid redirection sign")
+                newNode = Branch(indent, text)
+                topNode.children.append(newNode)
+            elif keyword in ['for', 'while']:
+                # IterationNode
+                if len(redirect_text) > 0:
+                    __raise_exception2(linenum, "Invalid redirection sign")
+                newNode = IterationNode(indent, text)
+                topNode.children.append(newNode)
+            else:
+                __raise_exception2(linenum, "Invalid keyword {}".format(keyword))
+
+            # Push the new node if child is expected
+            if newNode and line['end_colon']:
+                nodeStack.append(newNode)
+            line = copy.deepcopy(initial_line)
+            linenum += 1
+        i += 1
+    return sketch
+
+def read_and_parse(filename):
+    with open(filename, 'r') as f:
+        # orig_lines -> strip_lines -> tokens -> sketch-tree
+        orig_lines = f.readlines()
+
+        # 1. Pre-processing: remove comments and strip right spaces
+        strip_lines = __preprocess(orig_lines)
+
+        # 2. Parsing: indent, word, colon, redirect_sign
+        tokens = __parse(strip_lines)
+
+        # 3. Syntax analysis
+        sketch = __analyze_syntax(tokens)
+        return sketch
