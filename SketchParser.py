@@ -1,7 +1,8 @@
 import copy
+import pprint as pp
 
 # * Sketch
-#   - arr<FunctionNode> roots
+#   - arr<FunctionNode> children
 # * Node
 #   - str labelText
 # * FunctionNode : Node
@@ -10,15 +11,19 @@ import copy
 # * IterationNode : Node
 #   - arr<Node> children
 # * ForkNode : Node
-#   - arr<Branch> children
-# * Branch
+#   - arr<BranchNode> children
+# * BranchNode
 #   - str labelText
 #   - arr<Node> children
 
 class Sketch:
     def __init__(self):
-        self.roots = []
-        pass
+        self.children = []
+    def __str__(self):
+        s = "[Sketch:0]"
+        for child in self.children:
+            s += '\n' + str(child)
+        return s
 
 class Node:
     def __init__(self, indent, labelText):
@@ -29,38 +34,48 @@ class Node:
 
 class FunctionNode(Node):
     def __init__(self, indent, labelText, redirectLabelText):
-        __super__().__init__(indent, labelText)
+        super().__init__(indent, labelText)
         self.redirectLabelText = redirectLabelText
+    def __str__(self):
+        s = (' ' * self.indent) + self.labelText
+        if len(self.redirectLabelText) > 0:
+            s += ' => ' + self.redirectLabelText
+        s += " [Function:{}]".format(self.indent)
+        for child in self.children:
+            s += '\n' + str(child)
+        return s
 
 class IterationNode(Node):
     def __init__(self, indent, labelText):
-        __super__().__init__(indent, labelText)
+        super().__init__(indent, labelText)
+    def __str__(self):
+        s = (' ' * self.indent) + self.labelText
+        s += " [Iteration:{}]".format(self.indent)
+        for child in self.children:
+            s += '\n' + str(child)
+        return s
 
 class ForkNode(Node):
     def __init__(self, indent):
-        __super__().__init__(indent, "")
+        super().__init__(indent, "")
+    def __str__(self):
+        s = (' ' * self.indent) + self.labelText
+        s += "[Fork:{}]".format(self.indent)
+        for child in self.children:
+            s += '\n' + str(child)
+        return s
 
-class Branch(Node):
+class BranchNode(Node):
     def __init__(self, indent, labelText):
-        __super__().__init__(indent, labelText) 
+        super().__init__(indent, labelText) 
         self.indent = indent
         self.labelText = labelText
-
-def __getIndentCount(self, line):
-    indentCount = 0
-    i = 0
-    while i < len(line) and (line[i] == ' ' or line[i] == '\t'):
-        if line[i] == ' ':
-            indentCount += 1
-        elif line[i] == '\t':
-            indentCount += 4
-        i += 1
-    return indentCount
-def __StartsWith(self, line, keywords):
-    for keyword in keywords:
-        if line.stratswith(keyword + " "):
-            return True
-    return False
+    def __str__(self):
+        s = (' ' * self.indent) + self.labelText
+        s += " [Branch:{}]".format(self.indent)
+        for child in self.children:
+            s += '\n' + str(child)
+        return s
 
 def __raise_exception(linenum, line, message):
     return Exception("Line {}: {}\n=> {}".format(linenum, message, line))
@@ -152,27 +167,30 @@ def __analyze_syntax(tokens):
     linenum = 1
     while i < len(tokens):
         token = tokens[i]
-        if token != 'NEWLINE':
-            if token == 'INDENT_S':
+        tokenType = token[0]
+        if tokenType != 'NEWLINE':
+            if tokenType == 'INDENT_S':
                 line['indent'] += 1
-            elif token == 'INDENT_T':
+            elif tokenType == 'INDENT_T':
                 line['indent'] += 4
-            elif token == 'END_COLON':
+            elif tokenType == 'END_COLON':
                 line['end_colon'] = True
-            else token == 'REDIRECT':
+            elif tokenType == 'REDIRECT':
                 line['redirect_found'] = True
-            elif token == 'WORD':
+            elif tokenType == 'WORD':
+                tokenText = token[1]
                 if not line['keyword_check']:
                     line['keyword_check'] = True
-                    if token in ['if', 'elif', 'else', 'for', 'while']:
-                        line['keyword'] = token
+                    if tokenText in ['if', 'elif', 'else', 'for', 'while']:
+                        line['keyword'] = tokenText
                         continue
-                if not line['words_after_redirect']:
-                    line['words_before_redirect'].append(token)
+                if not line['redirect_found']:
+                    line['words_before_redirect'].append(tokenText)
                 else:
-                    line['words_after_redirect'].append(token)
+                    line['words_after_redirect'].append(tokenText)
         else:
             # NEWLINE
+            pp.pprint(line)
             keyword = line['keyword']
             indent = line['indent']
             topNode = nodeStack[-1]
@@ -194,8 +212,8 @@ def __analyze_syntax(tokens):
                         topNode = nodeStack[-1]
                         if isinstance(topNode, ForkNode):
                             if keyword and not keyword in ['elif', 'else']:
-                            nodeStack = nodeStack[:-1]
-                            topNode = nodeStack[-1]
+                                nodeStack = nodeStack[:-1]
+                                topNode = nodeStack[-1]
                     elif indent != topNode.child_indent:
                         __raise_exception2(linenum, "Invalid indent")
 
@@ -207,19 +225,19 @@ def __analyze_syntax(tokens):
                 newNode = FunctionNode(indent, text, redirect_text)
                 topNode.children.append(newNode)
             elif keyword == 'if':
-                # ForkNode + Branch
+                # ForkNode + BranchNode
                 if len(redirect_text) > 0:
                     __raise_exception2(linenum, "Invalid redirection sign")
                 forkNode = ForkNode(indent)
                 nodeStack.append(forkNode)
-                newNode = Branch(indent, text)
+                newNode = BranchNode(indent, text)
                 topNode.children.append(forkNode)
                 forkNode.children.append(newNode)
             elif keyword in ['elif', 'else']:
-                # Branch
+                # BranchNode
                 if len(redirect_text) > 0:
                     __raise_exception2(linenum, "Invalid redirection sign")
-                newNode = Branch(indent, text)
+                newNode = BranchNode(indent, text)
                 topNode.children.append(newNode)
             elif keyword in ['for', 'while']:
                 # IterationNode
@@ -248,6 +266,7 @@ def read_and_parse(filename):
 
         # 2. Parsing: indent, word, colon, redirect_sign
         tokens = __parse(strip_lines)
+        #pp.pprint(tokens)
 
         # 3. Syntax analysis
         sketch = __analyze_syntax(tokens)
