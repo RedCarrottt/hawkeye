@@ -3,23 +3,68 @@ import drawSvg as draw
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout
 from PyQt5.QtSvg import QSvgWidget, QSvgRenderer
-import SketchParser
+import SketchParser as sp
+from SketchParser import Sketch, Node, FunctionNode, IterationNode, ForkNode, BranchNode
 
 # Diagram Drawer
 class DiagramDrawer:
     def __init__(self, filename):
         self.filename = filename
 
-    def calculate(self):
-        pass
+    def __layout(self, node, state):
+        diags = []
+        newDiag = {}
 
-    def draw(self):
-        d = draw.Drawing(1024, 768, origin='center', displayInline=False)
+        MIN_WIDTH = 150
+        MIN_HEIGHT = 30
+        INDENT_WIDTH = 20
+        ROW_HEIGHT = MIN_HEIGHT + 15
+        MARGIN = 10
+
+        if not isinstance(node, Sketch) and not isinstance(node, ForkNode):
+            bottom = state['bottom'] - ROW_HEIGHT
+            state['bottom'] = bottom
+            left = state['left'] + INDENT_WIDTH * node.indent
+            
+            newDiag = {
+                'type': 'rectangle',
+                'pos': [left, bottom, MIN_WIDTH, MIN_HEIGHT],
+                'margin': [MARGIN, MARGIN],
+                'textSize': 16,
+                'labelText': node.labelText
+            }
+            diags.append(newDiag)
+
+        if node.children:
+            for childNode in node.children:
+                diags += self.__layout(childNode, state)
+        return diags
+
+    def layout(self, node):
+        WIDTH = 1024
+        HEIGHT = 768
+        state = {'width': WIDTH, 'height': HEIGHT, 'left': 0, 'bottom': HEIGHT}
+
+        diags = self.__layout(node, state)
+        layout = {'width': WIDTH, 'height': HEIGHT, 'diags': diags}
+        return layout
+
+    def layout_and_draw(self, sketch):
+        # Layout
+        layout = self.layout(sketch)
+
+        # Draw
+        d = draw.Drawing(layout['width'], layout['height'], displayInline=False)
         
-        r = draw.Rectangle(-80, 0, 150, 50, fill='white', stroke_width=2, stroke='black')
-        d.append(r)
-        d.append(draw.Text('node_reclaim', 16, -70, 10, fill='black'))
-        
+        for diag in layout['diags']:
+            print(diag['pos'])
+            r = draw.Rectangle(diag['pos'][0], diag['pos'][1], diag['pos'][2], diag['pos'][3],
+                fill='white', stroke_width=2, stroke='black')
+            d.append(r)
+
+            textLeft = diag['pos'][0] + diag['margin'][0]
+            textBottom = diag['pos'][1] + diag['margin'][1]
+            d.append(draw.Text(diag['labelText'], diag['textSize'], textLeft, textBottom, fill='black'))
         d.saveSvg(self.filename)
 
 class DiagramViewerWidget(QWidget):
@@ -48,10 +93,11 @@ class DiagramViewer():
         widget.show()
         sys.exit(self.app.exec_())
 
-sr = SketchReader()
-filename='diagram.svg'
-dd = DiagramDrawer(filename)
-dd.calculate()
-dd.draw()
-dv = DiagramViewer('HawkEye', filename)
+input_filename='example_sketch.txt'
+
+output_filename=input_filename.replace(".txt", ".svg")
+sketch = sp.read_and_parse(input_filename)
+dd = DiagramDrawer(output_filename)
+dd.layout_and_draw(sketch)
+dv = DiagramViewer('HawkEye', output_filename)
 dv.show()

@@ -1,5 +1,4 @@
 import copy
-import pprint as pp
 
 # * Sketch
 #   - arr<FunctionNode> children
@@ -20,7 +19,7 @@ class Sketch:
     def __init__(self):
         self.children = []
     def __str__(self):
-        s = "[Sketch:0]"
+        s = "# Sketch:0"
         for child in self.children:
             s += '\n' + str(child)
         return s
@@ -40,7 +39,9 @@ class FunctionNode(Node):
         s = (' ' * self.indent) + self.labelText
         if len(self.redirectLabelText) > 0:
             s += ' => ' + self.redirectLabelText
-        s += " [Function:{}]".format(self.indent)
+        if len(self.children) > 0:
+            s += ':'
+        s += " # Function:{}".format(self.indent)
         for child in self.children:
             s += '\n' + str(child)
         return s
@@ -50,7 +51,9 @@ class IterationNode(Node):
         super().__init__(indent, labelText)
     def __str__(self):
         s = (' ' * self.indent) + self.labelText
-        s += " [Iteration:{}]".format(self.indent)
+        if len(self.children) > 0:
+            s += ':'
+        s += " # Iteration:{}".format(self.indent)
         for child in self.children:
             s += '\n' + str(child)
         return s
@@ -60,7 +63,7 @@ class ForkNode(Node):
         super().__init__(indent, "")
     def __str__(self):
         s = (' ' * self.indent) + self.labelText
-        s += "[Fork:{}]".format(self.indent)
+        s += "# Fork:{}".format(self.indent)
         for child in self.children:
             s += '\n' + str(child)
         return s
@@ -72,7 +75,9 @@ class BranchNode(Node):
         self.labelText = labelText
     def __str__(self):
         s = (' ' * self.indent) + self.labelText
-        s += " [Branch:{}]".format(self.indent)
+        if len(self.children) > 0:
+            s += ':'
+        s += " # Branch:{}".format(self.indent)
         for child in self.children:
             s += '\n' + str(child)
         return s
@@ -190,7 +195,6 @@ def __analyze_syntax(tokens):
                     line['words_after_redirect'].append(tokenText)
         else:
             # NEWLINE
-            pp.pprint(line)
             keyword = line['keyword']
             indent = line['indent']
             topNode = nodeStack[-1]
@@ -266,7 +270,6 @@ def read_and_parse(filename):
 
         # 2. Parsing: indent, word, colon, redirect_sign
         tokens = __parse(strip_lines)
-        #pp.pprint(tokens)
 
         # 3. Syntax analysis
         sketch = __analyze_syntax(tokens)
