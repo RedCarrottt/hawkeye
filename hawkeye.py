@@ -17,10 +17,10 @@ class DiagramDrawer:
 
         MIN_WIDTH = 150
         MIN_HEIGHT = 30
-        INDENT_WIDTH = 20
+        INDENT_WIDTH = 10
         ROW_HEIGHT = MIN_HEIGHT + 15
         MARGIN = 10
-        PARENT_LINE_START_X_RATIO = 0.2
+        PARENT_LINE_START_X_RATIO = 0.1
         PARENT_LINE_END_Y_RATIO = 0.5
 
         nodeDiagType = ''
