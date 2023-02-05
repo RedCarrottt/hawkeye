@@ -210,16 +210,16 @@ def __analyze_syntax(tokens):
                         __raise_exception2(linenum, "Invalid indent")
                     topNode.child_indent = indent
                 else:
-                    if indent == topNode.indent:
+                    while len(nodeStack) > 1 and indent <= topNode.indent:
                         # pop
                         nodeStack = nodeStack[:-1]
                         topNode = nodeStack[-1]
-                        if isinstance(topNode, ForkNode):
-                            if keyword and not keyword in ['elif', 'else']:
-                                nodeStack = nodeStack[:-1]
-                                topNode = nodeStack[-1]
-                    elif indent != topNode.child_indent:
-                        __raise_exception2(linenum, "Invalid indent")
+#                        if isinstance(topNode, ForkNode):
+#                            if keyword and not keyword in ['elif', 'else']:
+#                                nodeStack = nodeStack[:-1]
+#                                topNode = nodeStack[-1]
+#                    elif indent != topNode.child_indent:
+#                        __raise_exception2(linenum, "Invalid indent")
 
             # Check keyword
             text = ' '.join(line['words_before_redirect'])
