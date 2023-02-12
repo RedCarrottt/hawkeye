@@ -50,20 +50,20 @@ class Line(Diag):
             self.isAvailable = True
 
     def __fromRectangle(self, parentDiag):
-        PARENT_LINE_START_X_RATIO = 0.1
+        LINE_START_X_RATIO = 0.1
         childLeft = parentDiag.pos[0]
         childBottom = parentDiag.pos[1]
         childWidth = parentDiag.pos[2]
         childHeight = parentDiag.pos[3]
-        return (childWidth * PARENT_LINE_START_X_RATIO + childLeft, childBottom)
+        return (childWidth * LINE_START_X_RATIO + childLeft, childBottom)
 
     def __toRectangle(self, nodeDiag):
-        PARENT_LINE_END_Y_RATIO = 0.5
+        LINE_END_Y_RATIO = 0.5
         left = nodeDiag.pos[0]
         bottom = nodeDiag.pos[1]
         width = nodeDiag.pos[2]
         height = nodeDiag.pos[3]
-        return (left, height * PARENT_LINE_END_Y_RATIO + bottom)
+        return (left, height * LINE_END_Y_RATIO + bottom)
 
 def __layoutRecursively(node, layoutState, parentDiag):
     diags = []
