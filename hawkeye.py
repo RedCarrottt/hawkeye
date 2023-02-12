@@ -78,10 +78,6 @@ class DiagramDrawer:
                     diags.append(lineDiag)
 
         if node.children:
-#            if not isinstance(node, Sketch):
-#                print(node.labelText)
-#            print(node.children)
-#            print("")
             parentDiag = nodeDiag if nodeDiag else parentDiag
             for childNode in node.children:
                 childDiags = self.__layoutRecursively(childNode, state, parentDiag)
@@ -94,7 +90,6 @@ class DiagramDrawer:
         state = {'width': WIDTH, 'height': HEIGHT, 'left': 10, 'bottom': HEIGHT}
 
         diags = self.__layoutRecursively(node, state, None)
-#        diags.append({'type': 'line'})
         layout = {'width': WIDTH, 'height': HEIGHT, 'diags': diags}
         return layout
 
@@ -107,7 +102,6 @@ class DiagramDrawer:
         
         for diag in layout['diags']:
             if diag['type'] == 'rectangle':
-#                print(diag['pos'])
                 r = draw.Rectangle(diag['pos'][0], diag['pos'][1], diag['pos'][2], diag['pos'][3],
                     fill='white', stroke_width=diag['stroke_width'], stroke='black')
                 d.append(r)
@@ -120,35 +114,8 @@ class DiagramDrawer:
                 arrow.append(draw.Lines(-0.1, -0.5, -0.1, 0.5, 0.9, 0, fill='black', close=True))
                 p = draw.Path(stroke='black', stroke_width=2, fill='none', marker_end=arrow)
                 p.M(diag['path'][0], diag['path'][1]).L(diag['path'][2], diag['path'][3]).L(diag['path'][4]-diag['scale']*2, diag['path'][5])
-#                p.M(200, 400).L(200, 270).L(0, 200)
                 d.append(p)
         d.saveSvg(self.filename)
-
-#class DiagramViewerWidget(QWidget):
-#    def __init__(self, windowTitle, filename):
-#        super().__init__()
-#        self.setStyleSheet("background-color: white;")
-#        self.setWindowTitle(windowTitle)
-#        self.setGeometry(100,100,1024,768)
-#
-#        svgWidget = QSvgWidget()
-#        svgWidget.renderer().load(filename)
-#
-#        vbox = QVBoxLayout()
-#        vbox.addWidget(svgWidget)
-#        self.setLayout(vbox)
-#
-## Diagram Viewer
-#class DiagramViewer():
-#    def __init__(self, windowTitle, filename):
-#        self.app = QApplication(sys.argv)
-#        self.windowTitle = windowTitle
-#        self.filename = filename
-#
-#    def show(self):
-#        widget = DiagramViewerWidget(self.windowTitle, self.filename)
-#        widget.show()
-#        sys.exit(self.app.exec_())
 
 input_filename='example_sketch.txt'
 
@@ -157,5 +124,3 @@ sketch = sp.read_and_parse(input_filename)
 dd = DiagramDrawer(output_filename)
 dd.layout_and_draw(sketch)
 print("Output: {}".format(output_filename))
-#dv = DiagramViewer('HawkEye', output_filename)
-#dv.show()
