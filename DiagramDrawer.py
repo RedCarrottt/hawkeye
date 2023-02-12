@@ -38,9 +38,13 @@ class Line(Diag):
 
         if parentDiag.type == 'rectangle':
             start_pos = self.__fromRectangle(parentDiag)
+        elif parentDiag.type == 'circle':
+            start_pos = self.__fromCircle(parentDiag)
 
         if nodeDiag.type == 'rectangle':
             end_pos = self.__toRectangle(nodeDiag)
+        elif nodeDiag.type == 'circle':
+            end_pos = self.__toCircle(nodeDiag)
 
         if start_pos and end_pos:
             self.path = [start_pos[0], start_pos[1],
@@ -50,37 +54,75 @@ class Line(Diag):
             self.isAvailable = True
 
     def __fromRectangle(self, parentDiag):
-        LINE_START_X_RATIO = 0.1
-        childLeft = parentDiag.pos[0]
-        childBottom = parentDiag.pos[1]
-        childWidth = parentDiag.pos[2]
-        childHeight = parentDiag.pos[3]
-        return (childWidth * LINE_START_X_RATIO + childLeft, childBottom)
+        X_RATIO = 0.1
+        left = parentDiag.pos[0]
+        bottom = parentDiag.pos[1]
+        width = parentDiag.pos[2]
+        height = parentDiag.pos[3]
+        return (width * X_RATIO + left, bottom)
 
     def __toRectangle(self, nodeDiag):
-        LINE_END_Y_RATIO = 0.5
+        Y_RATIO = 0.5
         left = nodeDiag.pos[0]
         bottom = nodeDiag.pos[1]
         width = nodeDiag.pos[2]
         height = nodeDiag.pos[3]
-        return (left, height * LINE_END_Y_RATIO + bottom)
+        return (left, height * Y_RATIO + bottom)
+
+    def __fromCircle(self, parentDiag):
+        X_RATIO = 0
+        Y_RATIO = -1
+        left = parentDiag.pos[0]
+        bottom = parentDiag.pos[1]
+        radius = parentDiag.radius
+        return (radius * X_RATIO + left, radius * Y_RATIO + bottom)
+
+    def __toCircle(self, nodeDiag):
+        X_RATIO = -0.5
+        Y_RATIO = 0
+        left = nodeDiag.pos[0]
+        bottom = nodeDiag.pos[1]
+        radius = nodeDiag.radius
+        return (radius * X_RATIO + left, radius * Y_RATIO + bottom)
+
+class Circle(Diag):
+    def __init__(self, node, left, bottom):
+        super().__init__('circle')
+        RADIUS = 5
+        MARGIN_X = 15
+        MARGIN_Y = -5
+
+        self.node = node
+        self.pos = [left + RADIUS, bottom + RADIUS]
+        self.radius = RADIUS
+        self.margin = [MARGIN_X, MARGIN_Y]
+        self.textSize = 16
+        self.labelText = node.labelText
 
 def __layoutRecursively(node, layoutState, parentDiag):
     diags = []
     nodeDiag = None
 
     nodeDiagType = ''
-    if not isinstance(node, Sketch) and not isinstance(node, ForkNode):
+    if isinstance(node, Sketch) or isinstance(node, ForkNode):
+        pass
+    elif isinstance(node, BranchNode):
+        nodeDiagType = 'circle'
+    else:
         nodeDiagType = 'rectangle'
 
     # Add diagram for the node
-    INDENT_WIDTH = 10
-    ROW_HEIGHT = MIN_HEIGHT + 15
-    if nodeDiagType == 'rectangle':
+    if nodeDiagType != '':
+        INDENT_WIDTH = 10
+        ROW_HEIGHT = MIN_HEIGHT + 15
         left = layoutState['left'] + INDENT_WIDTH * node.indent
         bottom = layoutState['bottom'] - ROW_HEIGHT
-        nodeDiag = Rectangle(node, left, bottom)
-        diags.append(nodeDiag)
+        if nodeDiagType == 'rectangle':
+            nodeDiag = Rectangle(node, left, bottom)
+            diags.append(nodeDiag)
+        elif nodeDiagType == 'circle':
+            nodeDiag = Circle(node, left, bottom)
+            diags.append(nodeDiag)
         layoutState['bottom'] = bottom
 
     # Add lines from the parent node to this node
@@ -114,9 +156,9 @@ def layout_and_draw(sketch, filename):
     
     for diag in layout['diags']:
         if diag.type == 'rectangle':
-            r = draw.Rectangle(diag.pos[0], diag.pos[1], diag.pos[2], diag.pos[3],
+            rect = draw.Rectangle(diag.pos[0], diag.pos[1], diag.pos[2], diag.pos[3],
                 fill='white', stroke_width=diag.stroke_width, stroke='black')
-            d.append(r)
+            d.append(rect)
 
             textLeft = diag.pos[0] + diag.margin[0]
             textBottom = diag.pos[1] + diag.margin[1]
@@ -124,7 +166,14 @@ def layout_and_draw(sketch, filename):
         elif diag.type == 'line':
             arrow = draw.Marker(-0.1, -0.5, 0.9, 0.5, scale=diag.scale, orient='auto')
             arrow.append(draw.Lines(-0.1, -0.5, -0.1, 0.5, 0.9, 0, fill='black', close=True))
-            p = draw.Path(stroke='black', stroke_width=2, fill='none', marker_end=arrow)
-            p.M(diag.path[0], diag.path[1]).L(diag.path[2], diag.path[3]).L(diag.path[4]-diag.scale*2, diag.path[5])
-            d.append(p)
+            path = draw.Path(stroke='black', stroke_width=2, fill='none', marker_end=arrow)
+            path.M(diag.path[0], diag.path[1]).L(diag.path[2], diag.path[3]).L(diag.path[4]-diag.scale*2, diag.path[5])
+            d.append(path)
+        elif diag.type == 'circle':
+            circle = draw.Circle(diag.pos[0], diag.pos[1], diag.radius,
+                                 fill='white', stroke_width=2, stroke='black')
+            d.append(circle)
+            textLeft = diag.pos[0] + diag.margin[0]
+            textBottom = diag.pos[1] + diag.margin[1]
+            d.append(draw.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
     d.saveSvg(filename)
