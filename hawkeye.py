@@ -42,6 +42,10 @@ class DiagramDrawer:
                 'textSize': 16,
                 'labelText': node.labelText
             }
+            if isinstance(node, IterationNode) or isinstance(node, BranchNode):
+                nodeDiag['stroke_width'] = 4
+            else:
+                nodeDiag['stroke_width'] = 2
             diags.append(nodeDiag)
 
         # Add lines from the parent node to this node
@@ -105,7 +109,7 @@ class DiagramDrawer:
             if diag['type'] == 'rectangle':
 #                print(diag['pos'])
                 r = draw.Rectangle(diag['pos'][0], diag['pos'][1], diag['pos'][2], diag['pos'][3],
-                    fill='white', stroke_width=2, stroke='black')
+                    fill='white', stroke_width=diag['stroke_width'], stroke='black')
                 d.append(r)
     
                 textLeft = diag['pos'][0] + diag['margin'][0]
