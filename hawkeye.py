@@ -37,38 +37,24 @@ class DiagramDrawer:
             nodeDiag['stroke_width'] = 2
         return nodeDiag
 
-    def __addLineToRectangle(self, nodeDiag, layoutState, parentDiag):
-        # To this rectangle (child)
+    def __lineFromRectangle(self, parentDiag):
         PARENT_LINE_START_X_RATIO = 0.1
+        childLeft = parentDiag['pos'][0]
+        childBottom = parentDiag['pos'][1]
+        childWidth = parentDiag['pos'][2]
+        childHeight = parentDiag['pos'][3]
+
+        return (childWidth * PARENT_LINE_START_X_RATIO + childLeft, childBottom)
+
+    def __lineToRectangle(self, nodeDiag):
+        # To this rectangle (child)
         PARENT_LINE_END_Y_RATIO = 0.5
 
         left = nodeDiag['pos'][0]
         bottom = nodeDiag['pos'][1]
         width = nodeDiag['pos'][2]
         height = nodeDiag['pos'][3]
-        child_line_end_x = left
-        child_line_end_y = height * PARENT_LINE_END_Y_RATIO + bottom
-        
-        parentDiagType = parentDiag['type']
-        if parentDiagType == 'rectangle':
-            # From a rectangle (parent)
-            childLeft = parentDiag['pos'][0]
-            childBottom = parentDiag['pos'][1]
-            childWidth = parentDiag['pos'][2]
-            childHeight = parentDiag['pos'][3]
-
-            child_line_start_x = childWidth * PARENT_LINE_START_X_RATIO + childLeft
-            child_line_start_y = childBottom
-
-            lineDiag = {
-                'type': 'line',
-                'path': [child_line_start_x, child_line_start_y,
-                         child_line_start_x, child_line_end_y,
-                         child_line_end_x, child_line_end_y],
-                'scale': 6
-            }
-            return lineDiag
-        return None
+        return (left, height * PARENT_LINE_END_Y_RATIO + bottom)
 
     def __layoutRecursively(self, node, layoutState, parentDiag):
         diags = []
@@ -86,9 +72,25 @@ class DiagramDrawer:
         # Add lines from the parent node to this node
         if parentDiag and nodeDiag:
             lineDiag = None
+            start_pos = None
+            end_pos = None
+            parentDiagType = parentDiag['type']
+
+            if parentDiagType == 'rectangle':
+                start_pos = self.__lineFromRectangle(parentDiag)
+
             if nodeDiagType == 'rectangle':
-                lineDiag = self.__addLineToRectangle(nodeDiag, layoutState, parentDiag)
-            diags.append(lineDiag)
+                end_pos = self.__lineToRectangle(nodeDiag)
+
+            if start_pos and end_pos:
+                lineDiag = {
+                    'type': 'line',
+                    'path': [start_pos[0], start_pos[1],
+                             start_pos[0], end_pos[1],
+                             end_pos[0], end_pos[1]],
+                    'scale': 6
+                }
+                diags.append(lineDiag)
 
         if node.children:
             parentDiag = nodeDiag if nodeDiag else parentDiag
