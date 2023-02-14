@@ -16,14 +16,15 @@ class Rectangle(Diag):
         MIN_WIDTH = 100
         MARGIN = 10
 
-        width = utils.textwidth(node.labelText, 16) + MARGIN
-        width = width if width > MIN_WIDTH else MIN_WIDTH
-        height = MIN_HEIGHT
+        self.left  = left
+        self.bottom = bottom
+        self.width = utils.textwidth(node.labelText, 16) + MARGIN
+        self.width = self.width if self.width > MIN_WIDTH else MIN_WIDTH
+        self.height = MIN_HEIGHT
 
         self.node = node
-        # TODO: pos => left, bottom, width, height
-        self.pos = [left, bottom, width, height]
-        self.margin = [MARGIN, MARGIN]
+        self.marginLeft = MARGIN
+        self.marginBottom = MARGIN
         self.textSize = 16
         self.labelText = node.labelText
 
@@ -58,47 +59,39 @@ class Line(Diag):
 
     def __fromRectangle(self, parentDiag):
         X_RATIO = 0.1
-        left = parentDiag.pos[0]
-        bottom = parentDiag.pos[1]
-        width = parentDiag.pos[2]
-        height = parentDiag.pos[3]
-        return (width * X_RATIO + left, bottom)
+        return (parentDiag.width * X_RATIO + parentDiag.left,
+                parentDiag.bottom)
 
     def __toRectangle(self, nodeDiag):
         Y_RATIO = 0.5
-        left = nodeDiag.pos[0]
-        bottom = nodeDiag.pos[1]
-        width = nodeDiag.pos[2]
-        height = nodeDiag.pos[3]
-        return (left, height * Y_RATIO + bottom)
+        return (nodeDiag.left,
+                nodeDiag.height * Y_RATIO + nodeDiag.bottom)
 
     def __fromCircle(self, parentDiag):
         X_RATIO = 0
         Y_RATIO = -1
-        left = parentDiag.pos[0]
-        bottom = parentDiag.pos[1]
-        radius = parentDiag.radius
-        return (radius * X_RATIO + left, radius * Y_RATIO + bottom)
+        return (parentDiag.radius * X_RATIO + parentDiag.left,
+                parentDiag.radius * Y_RATIO + parentDiag.bottom)
 
     def __toCircle(self, nodeDiag):
         X_RATIO = -0.5
         Y_RATIO = 0
-        left = nodeDiag.pos[0]
-        bottom = nodeDiag.pos[1]
-        radius = nodeDiag.radius
-        return (radius * X_RATIO + left, radius * Y_RATIO + bottom)
+        return (nodeDiag.radius * X_RATIO + nodeDiag.left,
+                 nodeDiag.radius * Y_RATIO + nodeDiag.bottom)
 
 class Circle(Diag):
     def __init__(self, node, left, bottom):
         super().__init__('circle')
         RADIUS = 5
-        MARGIN_X = 15
-        MARGIN_Y = -5
+        MARGIN_LEFT = 15
+        MARGIN_BOTTOM = -5
 
         self.node = node
-        self.pos = [left + RADIUS, bottom + RADIUS]
+        self.left = left + RADIUS
+        self.bottom = bottom + RADIUS
         self.radius = RADIUS
-        self.margin = [MARGIN_X, MARGIN_Y]
+        self.marginLeft = MARGIN_LEFT
+        self.marginBottom = MARGIN_BOTTOM
         self.textSize = 16
         self.labelText = node.labelText
 
@@ -147,7 +140,8 @@ def __layout(node):
     layoutState = {'width': WIDTH, 'height': HEIGHT, 'left': 10, 'bottom': HEIGHT}
 
     diags = __layoutRecursively(node, layoutState, None)
-    layout = {'width': WIDTH, 'height': HEIGHT, 'diags': diags}
+
+    layout = {'width': layoutState['width'], 'height': layoutState['height'], 'diags': diags}
     return layout
 
 def layout_and_draw(sketch, filename):
@@ -159,12 +153,12 @@ def layout_and_draw(sketch, filename):
     
     for diag in layout['diags']:
         if diag.type == 'rectangle':
-            rect = draw.Rectangle(diag.pos[0], diag.pos[1], diag.pos[2], diag.pos[3],
+            rect = draw.Rectangle(diag.left, diag.bottom, diag.width, diag.height,
                 fill='white', stroke_width=diag.stroke_width, stroke='black')
             d.append(rect)
 
-            textLeft = diag.pos[0] + diag.margin[0]
-            textBottom = diag.pos[1] + diag.margin[1]
+            textLeft = diag.left + diag.marginLeft
+            textBottom = diag.bottom + diag.marginBottom
             d.append(draw.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
         elif diag.type == 'line':
             arrow = draw.Marker(-0.1, -0.5, 0.9, 0.5, scale=diag.scale, orient='auto')
@@ -173,10 +167,10 @@ def layout_and_draw(sketch, filename):
             path.M(diag.path[0], diag.path[1]).L(diag.path[2], diag.path[3]).L(diag.path[4]-diag.scale*2, diag.path[5])
             d.append(path)
         elif diag.type == 'circle':
-            circle = draw.Circle(diag.pos[0], diag.pos[1], diag.radius,
+            circle = draw.Circle(diag.left, diag.bottom, diag.radius,
                                  fill='white', stroke_width=2, stroke='black')
             d.append(circle)
-            textLeft = diag.pos[0] + diag.margin[0]
-            textBottom = diag.pos[1] + diag.margin[1]
+            textLeft = diag.left + diag.marginLeft
+            textBottom = diag.bottom + diag.marginBottom
             d.append(draw.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
     d.saveSvg(filename)
