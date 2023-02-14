@@ -1,6 +1,7 @@
 # HawkEye
 import drawSvg as draw
 from SketchParser import Sketch, Node, FunctionNode, IterationNode, ForkNode, BranchNode
+import utils
 
 MIN_HEIGHT = 30
 
@@ -12,13 +13,15 @@ class Diag:
 class Rectangle(Diag):
     def __init__(self, node, left, bottom):
         super().__init__('rectangle')
-        MIN_WIDTH = 150
+        MIN_WIDTH = 100
         MARGIN = 10
 
-        width = MIN_WIDTH
+        width = utils.textwidth(node.labelText, 16) + MARGIN
+        width = width if width > MIN_WIDTH else MIN_WIDTH
         height = MIN_HEIGHT
 
         self.node = node
+        # TODO: pos => left, bottom, width, height
         self.pos = [left, bottom, width, height]
         self.margin = [MARGIN, MARGIN]
         self.textSize = 16
