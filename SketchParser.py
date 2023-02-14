@@ -274,3 +274,16 @@ def read_and_parse(filename):
         # 3. Syntax analysis
         sketch = __analyze_syntax(tokens)
         return sketch
+
+def parse(text):
+    orig_lines = text.splitlines()
+
+    # 1. Pre-processing: remove comments and strip right spaces
+    strip_lines = __preprocess(orig_lines)
+
+    # 2. Parsing: indent, word, colon, redirect_sign
+    tokens = __parse(strip_lines)
+
+    # 3. Syntax analysis
+    sketch = __analyze_syntax(tokens)
+    return sketch
