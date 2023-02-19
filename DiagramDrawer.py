@@ -125,9 +125,9 @@ def __layoutRecursively(node, layoutState, parentDiag):
 
     # Add diagram for the node
     if nodeDiagType != '':
-        INDENT_WIDTH = 10
+        INDENT_WIDTH = 40
         ROW_HEIGHT = MIN_HEIGHT + 15
-        left = layoutState['left'] + INDENT_WIDTH * node.indent
+        left = layoutState['left'] + INDENT_WIDTH * layoutState['indent']
         bottom = layoutState['bottom'] + ROW_HEIGHT
         if nodeDiagType == 'rectangle':
             nodeDiag = Rectangle(node, left, bottom)
@@ -145,9 +145,13 @@ def __layoutRecursively(node, layoutState, parentDiag):
 
     if node.children:
         parentDiag = nodeDiag if nodeDiag else parentDiag
+        if not isinstance(node, Sketch):
+            layoutState['indent'] += 1
         for childNode in node.children:
             childDiags = __layoutRecursively(childNode, layoutState, parentDiag)
             diags += childDiags
+        if not isinstance(node, Sketch):
+            layoutState['indent'] -= 1
     return diags
 
 def __layout(node):
@@ -156,7 +160,8 @@ def __layout(node):
     CANVAS_MARGIN_X = 10
     CANVAS_MARGIN_Y = 10
     layoutState = {'width': WIDTH, 'height': HEIGHT,
-                   'left': CANVAS_MARGIN_X, 'bottom': CANVAS_MARGIN_Y}
+                   'left': CANVAS_MARGIN_X, 'bottom': CANVAS_MARGIN_Y,
+                   'indent': 0}
 
     diags = __layoutRecursively(node, layoutState, None)
 
