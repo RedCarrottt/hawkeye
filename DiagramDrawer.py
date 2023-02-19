@@ -14,7 +14,7 @@ class Diag:
 class Rectangle(Diag):
     def __init__(self, node, left, bottom):
         super().__init__('rectangle')
-        MIN_WIDTH = 100
+        MIN_WIDTH = 120
         MARGIN = 10
 
         self.node = node
