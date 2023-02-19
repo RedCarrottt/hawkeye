@@ -85,6 +85,43 @@ class Circle(Diag):
         return (self.left + self.radius * X_RATIO,
                 self.bottom + self.radius * Y_RATIO)
 
+class Diamond(Diag):
+    def __init__(self, node, left, bottom):
+        super().__init__('diamond')
+        RADIUS = 10
+        MARGIN_LEFT = 15
+        MARGIN_BOTTOM = -5
+
+        self.node = node
+        self.textSize = 16
+        self.labelText = node.labelText
+
+        self.left = left + RADIUS
+        self.bottom = bottom + RADIUS
+        self.radius = RADIUS
+        self.labelText = self.labelText if not DEBUG else \
+            (self.labelText + " ({},{},{})".format(self.left, self.bottom, self.radius))
+
+        self.maxRight = self.left + self.radius
+        self.maxTop = self.bottom + self.radius
+
+        self.marginLeft = MARGIN_LEFT
+        self.marginBottom = MARGIN_BOTTOM
+
+        self.stroke_width = 2
+
+    def getStartLinePos(self):
+        X_RATIO = 0
+        Y_RATIO = 0.5
+        return (self.left + self.radius * X_RATIO,
+                self.bottom + self.radius * Y_RATIO)
+
+    def getEndLinePos(self):
+        X_RATIO = -0.7
+        Y_RATIO = 0
+        return (self.left + self.radius * X_RATIO,
+                self.bottom + self.radius * Y_RATIO)
+
 class Line(Diag):
     def __init__(self, parentDiag, nodeDiag):
         super().__init__('line')
@@ -92,10 +129,10 @@ class Line(Diag):
         end_pos = None
         self.isAvailable = False
 
-        if parentDiag.type in ['rectangle', 'circle']:
+        if parentDiag.type in ['rectangle', 'circle', 'diamond']:
             start_pos = parentDiag.getStartLinePos()
 
-        if nodeDiag.type in ['rectangle', 'circle']:
+        if nodeDiag.type in ['rectangle', 'circle', 'diamond']:
             end_pos = nodeDiag.getEndLinePos()
 
         if start_pos and end_pos:
@@ -130,8 +167,11 @@ def __layoutRecursively(node, layoutState, parentDiag):
         if nodeDiagType == 'rectangle':
             nodeDiag = Rectangle(node, left, bottom)
             diags.append(nodeDiag)
-        elif nodeDiagType == 'circle' or nodeDiagType == 'diamond':
+        elif nodeDiagType == 'circle':
             nodeDiag = Circle(node, left, bottom)
+            diags.append(nodeDiag)
+        elif nodeDiagType == 'diamond':
+            nodeDiag = Diamond(node, left, bottom)
             diags.append(nodeDiag)
         layoutState['bottom'] = bottom
 
@@ -202,6 +242,16 @@ def layout_and_draw(sketch, filename):
             circle = draw.Circle(diag.left, layout['height'] - diag.bottom, diag.radius,
                                  fill='white', stroke_width=2, stroke='black')
             d.append(circle)
+            textLeft = diag.left + diag.marginLeft
+            textBottom = layout['height'] - diag.bottom + diag.marginBottom
+            d.append(draw.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
+        elif diag.type == 'diamond':
+            diamond = draw.Lines(diag.left, layout['height'] - (diag.bottom + 0.5 * diag.radius),
+                diag.left + diag.radius, layout['height'] - diag.bottom,
+                diag.left, layout['height'] - (diag.bottom - 0.5 * diag.radius),
+                diag.left - diag.radius, layout['height'] - diag.bottom,
+                fill='white', stroke_width=diag.stroke_width, stroke='black', close=True)
+            d.append(diamond)
             textLeft = diag.left + diag.marginLeft
             textBottom = layout['height'] - diag.bottom + diag.marginBottom
             d.append(draw.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
