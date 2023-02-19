@@ -40,53 +40,15 @@ class Rectangle(Diag):
         else:
             self.stroke_width = 2
 
-class Line(Diag):
-    def __init__(self, parentDiag, nodeDiag):
-        super().__init__('line')
-        start_pos = None
-        end_pos = None
-        self.isAvailable = False
-
-        if parentDiag.type == 'rectangle':
-            start_pos = self.__fromRectangle(parentDiag)
-        elif parentDiag.type == 'circle':
-            start_pos = self.__fromCircle(parentDiag)
-
-        if nodeDiag.type == 'rectangle':
-            end_pos = self.__toRectangle(nodeDiag)
-        elif nodeDiag.type == 'circle':
-            end_pos = self.__toCircle(nodeDiag)
-
-        if start_pos and end_pos:
-            self.maxRight = start_pos[0] if start_pos[0] > end_pos[0] else end_pos[0]
-            self.maxTop = start_pos[1] if start_pos[1] > end_pos[1] else end_pos[1]
-            self.path = [start_pos[0], start_pos[1],
-                         start_pos[0], end_pos[1],
-                         end_pos[0], end_pos[1]]
-            self.scale = 6
-            self.isAvailable = True
-
-    def __fromRectangle(self, parentDiag):
+    def getStartLinePos(self):
         X_RATIO = 0.1
-        return (parentDiag.width * X_RATIO + parentDiag.left,
-                parentDiag.bottom)
+        return (self.width * X_RATIO + self.left,
+                self.bottom)
 
-    def __toRectangle(self, nodeDiag):
+    def getEndLinePos(self):
         Y_RATIO = -0.5
-        return (nodeDiag.left,
-                nodeDiag.bottom + nodeDiag.height * Y_RATIO)
-
-    def __fromCircle(self, parentDiag):
-        X_RATIO = 0
-        Y_RATIO = 1
-        return (parentDiag.left + parentDiag.radius * X_RATIO,
-                parentDiag.bottom + parentDiag.radius * Y_RATIO)
-
-    def __toCircle(self, nodeDiag):
-        X_RATIO = -0.5
-        Y_RATIO = 0
-        return (nodeDiag.left + nodeDiag.radius * X_RATIO,
-                nodeDiag.bottom + nodeDiag.radius * Y_RATIO)
+        return (self.left,
+                self.bottom + self.height * Y_RATIO)
 
 class Circle(Diag):
     def __init__(self, node, left, bottom):
@@ -111,15 +73,51 @@ class Circle(Diag):
         self.marginLeft = MARGIN_LEFT
         self.marginBottom = MARGIN_BOTTOM
 
+    def getStartLinePos(self):
+        X_RATIO = 0
+        Y_RATIO = 1
+        return (self.left + self.radius * X_RATIO,
+                self.bottom + self.radius * Y_RATIO)
+
+    def getEndLinePos(self):
+        X_RATIO = -0.5
+        Y_RATIO = 0
+        return (self.left + self.radius * X_RATIO,
+                self.bottom + self.radius * Y_RATIO)
+
+class Line(Diag):
+    def __init__(self, parentDiag, nodeDiag):
+        super().__init__('line')
+        start_pos = None
+        end_pos = None
+        self.isAvailable = False
+
+        if parentDiag.type in ['rectangle', 'circle']:
+            start_pos = parentDiag.getStartLinePos()
+
+        if nodeDiag.type in ['rectangle', 'circle']:
+            end_pos = nodeDiag.getEndLinePos()
+
+        if start_pos and end_pos:
+            self.maxRight = start_pos[0] if start_pos[0] > end_pos[0] else end_pos[0]
+            self.maxTop = start_pos[1] if start_pos[1] > end_pos[1] else end_pos[1]
+            self.path = [start_pos[0], start_pos[1],
+                         start_pos[0], end_pos[1],
+                         end_pos[0], end_pos[1]]
+            self.scale = 6
+            self.isAvailable = True
+
 def __layoutRecursively(node, layoutState, parentDiag):
     diags = []
     nodeDiag = None
 
     nodeDiagType = ''
-    if isinstance(node, Sketch) or isinstance(node, ForkNode):
+    if isinstance(node, Sketch):
         pass
     elif isinstance(node, BranchNode):
         nodeDiagType = 'circle'
+    elif isinstance(node, ForkNode):
+        nodeDiagType = 'diamond'
     else:
         nodeDiagType = 'rectangle'
 
@@ -132,7 +130,7 @@ def __layoutRecursively(node, layoutState, parentDiag):
         if nodeDiagType == 'rectangle':
             nodeDiag = Rectangle(node, left, bottom)
             diags.append(nodeDiag)
-        elif nodeDiagType == 'circle':
+        elif nodeDiagType == 'circle' or nodeDiagType == 'diamond':
             nodeDiag = Circle(node, left, bottom)
             diags.append(nodeDiag)
         layoutState['bottom'] = bottom
