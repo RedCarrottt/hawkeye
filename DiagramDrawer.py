@@ -4,7 +4,6 @@ from SketchParser import Sketch, Node, FunctionNode, IterationNode, ForkNode, Br
 import utils
 
 DEBUG = False
-MIN_HEIGHT = 30
 
 class Diag:
     def __init__(self, diagType):
@@ -12,9 +11,10 @@ class Diag:
         pass
 
 class Rectangle(Diag):
-    def __init__(self, node, left, bottom):
+    def __init__(self, node, left, top):
         super().__init__('rectangle')
         MIN_WIDTH = 120
+        HEIGHT = 30
         MARGIN = 10
 
         self.node = node
@@ -22,12 +22,12 @@ class Rectangle(Diag):
         self.labelText = node.labelText
 
         self.left  = left
-        self.bottom = bottom
+        self.bottom = top + HEIGHT
         self.labelText = self.labelText if not DEBUG else \
             (self.labelText + " ({},{})".format(self.left, self.bottom))
         self.width = utils.textwidth(self.labelText, 16) + MARGIN
         self.width = self.width if self.width > MIN_WIDTH else MIN_WIDTH
-        self.height = MIN_HEIGHT
+        self.height = HEIGHT
 
         self.maxRight = self.left + self.width
         self.maxTop = self.bottom + self.height
@@ -51,7 +51,7 @@ class Rectangle(Diag):
                 self.bottom + self.height * Y_RATIO)
 
 class Circle(Diag):
-    def __init__(self, node, left, bottom):
+    def __init__(self, node, left, top):
         super().__init__('circle')
         RADIUS = 5
         MARGIN_LEFT = 15
@@ -62,7 +62,7 @@ class Circle(Diag):
         self.labelText = node.labelText
 
         self.left = left + RADIUS
-        self.bottom = bottom + RADIUS
+        self.bottom = top + RADIUS
         self.radius = RADIUS
         self.labelText = self.labelText if not DEBUG else \
             (self.labelText + " ({},{},{})".format(self.left, self.bottom, self.radius))
@@ -86,7 +86,7 @@ class Circle(Diag):
                 self.bottom + self.radius * Y_RATIO)
 
 class Diamond(Diag):
-    def __init__(self, node, left, bottom):
+    def __init__(self, node, left, top):
         super().__init__('diamond')
         RADIUS = 10
         MARGIN_LEFT = 15
@@ -97,7 +97,7 @@ class Diamond(Diag):
         self.labelText = node.labelText
 
         self.left = left + RADIUS
-        self.bottom = bottom + RADIUS
+        self.bottom = top + RADIUS
         self.radius = RADIUS
         self.labelText = self.labelText if not DEBUG else \
             (self.labelText + " ({},{},{})".format(self.left, self.bottom, self.radius))
@@ -161,19 +161,22 @@ def __layoutRecursively(node, layoutState, parentDiag):
     # Add diagram for the node
     if nodeDiagType != '':
         INDENT_WIDTH = 40
-        ROW_HEIGHT = MIN_HEIGHT + 15
+        ROW_HEIGHT = 45
         left = layoutState['left'] + INDENT_WIDTH * layoutState['indent']
-        bottom = layoutState['bottom'] + ROW_HEIGHT
+        top = layoutState['top']
+        DIAGRAM_MARGIN_Y = 15
+        print("{} {}".format(nodeDiagType,top))
         if nodeDiagType == 'rectangle':
-            nodeDiag = Rectangle(node, left, bottom)
+            nodeDiag = Rectangle(node, left, top)
             diags.append(nodeDiag)
         elif nodeDiagType == 'circle':
-            nodeDiag = Circle(node, left, bottom)
+            nodeDiag = Circle(node, left, top)
             diags.append(nodeDiag)
         elif nodeDiagType == 'diamond':
-            nodeDiag = Diamond(node, left, bottom)
+            nodeDiag = Diamond(node, left, top)
             diags.append(nodeDiag)
-        layoutState['bottom'] = bottom
+        if nodeDiag != None:
+            layoutState['top'] = nodeDiag.bottom + DIAGRAM_MARGIN_Y
 
     # Add lines from the parent node to this node
     if parentDiag and nodeDiag:
@@ -198,7 +201,7 @@ def __layout(node):
     CANVAS_MARGIN_X = 10
     CANVAS_MARGIN_Y = 10
     layoutState = {'width': WIDTH, 'height': HEIGHT,
-                   'left': CANVAS_MARGIN_X, 'bottom': CANVAS_MARGIN_Y,
+                   'left': CANVAS_MARGIN_X, 'top': CANVAS_MARGIN_Y,
                    'indent': 0}
 
     diags = __layoutRecursively(node, layoutState, None)
