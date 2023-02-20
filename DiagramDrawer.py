@@ -144,7 +144,7 @@ class Line(Diag):
             self.scale = 6
             self.isAvailable = True
 
-def __layoutRecursively(node, layoutState, parentDiag):
+def __layoutRecursively(node, layout, parentDiag):
     diags = []
     nodeDiag = None
 
@@ -162,10 +162,9 @@ def __layoutRecursively(node, layoutState, parentDiag):
     if nodeDiagType != '':
         INDENT_WIDTH = 40
         ROW_HEIGHT = 45
-        left = layoutState['left'] + INDENT_WIDTH * layoutState['indent']
-        top = layoutState['top']
+        left = layout.leftState + INDENT_WIDTH * layout.indentState
+        top = layout.topState
         DIAGRAM_MARGIN_Y = 15
-        print("{} {}".format(nodeDiagType,top))
         if nodeDiagType == 'rectangle':
             nodeDiag = Rectangle(node, left, top)
             diags.append(nodeDiag)
@@ -176,7 +175,7 @@ def __layoutRecursively(node, layoutState, parentDiag):
             nodeDiag = Diamond(node, left, top)
             diags.append(nodeDiag)
         if nodeDiag != None:
-            layoutState['top'] = nodeDiag.bottom + DIAGRAM_MARGIN_Y
+            layout.topState = nodeDiag.bottom + DIAGRAM_MARGIN_Y
 
     # Add lines from the parent node to this node
     if parentDiag and nodeDiag:
@@ -187,32 +186,43 @@ def __layoutRecursively(node, layoutState, parentDiag):
     if node.children:
         parentDiag = nodeDiag if nodeDiag else parentDiag
         if not isinstance(node, Sketch):
-            layoutState['indent'] += 1
+            layout.indentState += 1
         for childNode in node.children:
-            childDiags = __layoutRecursively(childNode, layoutState, parentDiag)
+            childDiags = __layoutRecursively(childNode, layout, parentDiag)
             diags += childDiags
         if not isinstance(node, Sketch):
-            layoutState['indent'] -= 1
+            layout.indentState -= 1
     return diags
 
+class Layout:
+    def __init__(self):
+        self.INITIAL_WIDTH = 100
+        self.INITIAL_HEIGHT = 100
+        self.CANVAS_MARGIN_X = 10
+        self.CANVAS_MARGIN_Y = 10
+
+        self.width = self.INITIAL_WIDTH
+        self.height = self.INITIAL_HEIGHT
+
+        self.leftState = self.CANVAS_MARGIN_X
+        self.topState = self.CANVAS_MARGIN_Y
+        self.indentState = 0
+
+        self.diags = []
+
+    def addEndMargins(self):
+        self.width += self.CANVAS_MARGIN_X * 2
+        self.height += self.CANVAS_MARGIN_Y * 2
+
 def __layout(node):
-    WIDTH = 100
-    HEIGHT = 100
-    CANVAS_MARGIN_X = 10
-    CANVAS_MARGIN_Y = 10
-    layoutState = {'width': WIDTH, 'height': HEIGHT,
-                   'left': CANVAS_MARGIN_X, 'top': CANVAS_MARGIN_Y,
-                   'indent': 0}
+    layout = Layout()
+    layout.diags = __layoutRecursively(node, layout, None)
 
-    diags = __layoutRecursively(node, layoutState, None)
+    for diag in layout.diags:
+        layout.width = diag.maxRight if diag.maxRight > layout.width else layout.width
+        layout.height = diag.maxTop if diag.maxTop > layout.height else layout.height
+    layout.addEndMargins()
 
-    for diag in diags:
-        layoutState['width'] = diag.maxRight if diag.maxRight > layoutState['width'] else layoutState['width']
-        layoutState['height'] = diag.maxTop if diag.maxTop > layoutState['height'] else layoutState['height']
-    layoutState['width'] += CANVAS_MARGIN_X * 2
-    layoutState['height'] += CANVAS_MARGIN_Y * 2
-
-    layout = {'width': layoutState['width'], 'height': layoutState['height'], 'diags': diags}
     return layout
 
 def layout_and_draw(sketch, filename):
@@ -220,42 +230,42 @@ def layout_and_draw(sketch, filename):
     layout = __layout(sketch)
 
     # Draw
-    d = draw.Drawing(layout['width'], layout['height'], displayInline=False)
+    d = draw.Drawing(layout.width, layout.height, displayInline=False)
     
-    for diag in layout['diags']:
+    for diag in layout.diags:
         if diag.type == 'rectangle':
             rect = draw.Rectangle(
-                    diag.left, layout['height'] - diag.bottom,
+                    diag.left, layout.height - diag.bottom,
                     diag.width, diag.height,
                     fill='white', stroke_width=diag.stroke_width, stroke='black')
             d.append(rect)
 
             textLeft = diag.left + diag.marginLeft
-            textBottom = layout['height'] - diag.bottom + diag.marginBottom
+            textBottom = layout.height - diag.bottom + diag.marginBottom
             d.append(draw.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
         elif diag.type == 'line':
             arrow = draw.Marker(-0.1, -0.5, 0.9, 0.5, scale=diag.scale, orient='auto')
             arrow.append(draw.Lines(-0.1, -0.5, -0.1, 0.5, 0.9, 0, fill='black', close=True))
             path = draw.Path(stroke='black', stroke_width=2, fill='none', marker_end=arrow)
-            path.M(diag.path[0], layout['height'] - diag.path[1]) \
-                .L(diag.path[2], layout['height'] - diag.path[3]) \
-                .L(diag.path[4] - diag.scale*2, layout['height'] - diag.path[5])
+            path.M(diag.path[0], layout.height - diag.path[1]) \
+                .L(diag.path[2], layout.height - diag.path[3]) \
+                .L(diag.path[4] - diag.scale*2, layout.height - diag.path[5])
             d.append(path)
         elif diag.type == 'circle':
-            circle = draw.Circle(diag.left, layout['height'] - diag.bottom, diag.radius,
+            circle = draw.Circle(diag.left, layout.height - diag.bottom, diag.radius,
                                  fill='white', stroke_width=2, stroke='black')
             d.append(circle)
             textLeft = diag.left + diag.marginLeft
-            textBottom = layout['height'] - diag.bottom + diag.marginBottom
+            textBottom = layout.height - diag.bottom + diag.marginBottom
             d.append(draw.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
         elif diag.type == 'diamond':
-            diamond = draw.Lines(diag.left, layout['height'] - (diag.bottom + 0.5 * diag.radius),
-                diag.left + diag.radius, layout['height'] - diag.bottom,
-                diag.left, layout['height'] - (diag.bottom - 0.5 * diag.radius),
-                diag.left - diag.radius, layout['height'] - diag.bottom,
+            diamond = draw.Lines(diag.left, layout.height - (diag.bottom + 0.5 * diag.radius),
+                diag.left + diag.radius, layout.height - diag.bottom,
+                diag.left, layout.height - (diag.bottom - 0.5 * diag.radius),
+                diag.left - diag.radius, layout.height - diag.bottom,
                 fill='white', stroke_width=diag.stroke_width, stroke='black', close=True)
             d.append(diamond)
             textLeft = diag.left + diag.marginLeft
-            textBottom = layout['height'] - diag.bottom + diag.marginBottom
+            textBottom = layout.height - diag.bottom + diag.marginBottom
             d.append(draw.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
     d.saveSvg(filename)
