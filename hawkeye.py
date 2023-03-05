@@ -33,6 +33,6 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 print("Hawkeye server is running...")
-print("Connect to http://localhost:3001")
+print("Connect to http://localhost:3000")
 print("Press Ctrl+C to exit the Hawkeye server.")
 signal.pause()
