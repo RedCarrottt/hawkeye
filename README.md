@@ -10,8 +10,14 @@
     1. ```$ cd web```
     2. ```$ npm install```
 
-## How to use
+## How to use in local
 Use following command to run hawkeye server
 ```
 $ python3 ./hawkeye.py
+```
+
+## How to use by docker
+```
+$ docker build .
+$ docker run -p 3000-3001:3000-3001 -it <docker ID>
 ```
