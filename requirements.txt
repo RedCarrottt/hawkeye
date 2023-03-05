@@ -1,5 +1,5 @@
 Flask>=2.2.3
 flask-restx>=1.1.0
-drawSvg>=1.9.0
+drawSvg==1.9.0
 pycairo>=1.23.0
 Flask-Cors==3.0.10
