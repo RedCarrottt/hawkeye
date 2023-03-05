@@ -225,7 +225,7 @@ def __layout(node):
 
     return layout
 
-def layout_and_draw(sketch, filename):
+def layout_and_draw(sketch, filename=None):
     # Layout
     layout = __layout(sketch)
 
@@ -268,4 +268,7 @@ def layout_and_draw(sketch, filename):
             textLeft = diag.left + diag.marginLeft
             textBottom = layout.height - diag.bottom + diag.marginBottom
             d.append(draw.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
-    d.saveSvg(filename)
+    if filename is None:
+        return d.asSvg()
+    else:
+        d.saveSvg(filename)

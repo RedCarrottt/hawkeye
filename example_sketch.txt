@@ -9,3 +9,6 @@ Function A: # FunctionNode
 Function D:
     Function E
     Function F
+    Function F:
+        Function F:
+            Function F
