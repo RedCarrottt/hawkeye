@@ -1,5 +1,5 @@
 # HawkEye
-import drawSvg as draw
+import drawSvg as DrawSVG
 from SketchParser import Sketch, Node, FunctionNode, IterationNode, ForkNode, BranchNode
 import utils
 
@@ -49,6 +49,18 @@ class Rectangle(Diag):
         Y_RATIO = -0.5
         return (self.left,
                 self.bottom + self.height * Y_RATIO)
+
+    def draw(self, layout, canvas):
+        rectElem = DrawSVG.Rectangle(
+                self.left, layout.height - self.bottom,
+                self.width, self.height,
+                fill='white', stroke_width=self.stroke_width, stroke='black')
+        canvas.append(rectElem)
+
+        textLeft = self.left + self.marginLeft
+        textBottom = layout.height - self.bottom + self.marginBottom
+        textElem = DrawSVG.Text(self.labelText, self.textSize, textLeft, textBottom, fill='black')
+        canvas.append(textElem)
 
 class Circle(Diag):
     def __init__(self, node, left, top):
@@ -225,50 +237,44 @@ def __layout(node):
 
     return layout
 
-def layout_and_draw(sketch, filename=None):
-    # Layout
-    layout = __layout(sketch)
-
-    # Draw
-    d = draw.Drawing(layout.width, layout.height, displayInline=False)
-    
+def __draw(layout):
+    # convert diag to svgElement -> canvas.append(svgElement)
+    canvas = DrawSVG.Drawing(layout.width, layout.height, displayInline=False)
     for diag in layout.diags:
         if diag.type == 'rectangle':
-            rect = draw.Rectangle(
-                    diag.left, layout.height - diag.bottom,
-                    diag.width, diag.height,
-                    fill='white', stroke_width=diag.stroke_width, stroke='black')
-            d.append(rect)
-
-            textLeft = diag.left + diag.marginLeft
-            textBottom = layout.height - diag.bottom + diag.marginBottom
-            d.append(draw.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
+            diag.draw(layout, canvas)
         elif diag.type == 'line':
-            arrow = draw.Marker(-0.1, -0.5, 0.9, 0.5, scale=diag.scale, orient='auto')
-            arrow.append(draw.Lines(-0.1, -0.5, -0.1, 0.5, 0.9, 0, fill='black', close=True))
-            path = draw.Path(stroke='black', stroke_width=2, fill='none', marker_end=arrow)
+            arrow = DrawSVG.Marker(-0.1, -0.5, 0.9, 0.5, scale=diag.scale, orient='auto')
+            arrow.append(DrawSVG.Lines(-0.1, -0.5, -0.1, 0.5, 0.9, 0, fill='black', close=True))
+            path = DrawSVG.Path(stroke='black', stroke_width=2, fill='none', marker_end=arrow)
             path.M(diag.path[0], layout.height - diag.path[1]) \
                 .L(diag.path[2], layout.height - diag.path[3]) \
                 .L(diag.path[4] - diag.scale*2, layout.height - diag.path[5])
-            d.append(path)
+            canvas.append(path)
         elif diag.type == 'circle':
-            circle = draw.Circle(diag.left, layout.height - diag.bottom, diag.radius,
+            circle = DrawSVG.Circle(diag.left, layout.height - diag.bottom, diag.radius,
                                  fill='white', stroke_width=2, stroke='black')
-            d.append(circle)
+            canvas.append(circle)
             textLeft = diag.left + diag.marginLeft
             textBottom = layout.height - diag.bottom + diag.marginBottom
-            d.append(draw.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
+            canvas.append(DrawSVG.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
         elif diag.type == 'diamond':
-            diamond = draw.Lines(diag.left, layout.height - (diag.bottom + 0.5 * diag.radius),
+            diamond = DrawSVG.Lines(diag.left, layout.height - (diag.bottom + 0.5 * diag.radius),
                 diag.left + diag.radius, layout.height - diag.bottom,
                 diag.left, layout.height - (diag.bottom - 0.5 * diag.radius),
                 diag.left - diag.radius, layout.height - diag.bottom,
                 fill='white', stroke_width=diag.stroke_width, stroke='black', close=True)
-            d.append(diamond)
+            canvas.append(diamond)
             textLeft = diag.left + diag.marginLeft
             textBottom = layout.height - diag.bottom + diag.marginBottom
-            d.append(draw.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
+            canvas.append(DrawSVG.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black'))
+    return canvas
+
+def layout_and_draw(sketch, filename=None):
+    layout = __layout(sketch)
+    canvas = __draw(layout)
     if filename is None:
-        return d.asSvg()
+        return canvas.asSvg()
     else:
-        d.saveSvg(filename)
+        canvas.saveSvg(filename)
+    return svg_text
