@@ -2,7 +2,7 @@ from flask import Flask, request, send_from_directory
 from flask_cors import CORS
 import os
 import SketchParser
-import DiagramDrawer
+from Canvas import Canvas
 
 app = Flask(__name__)
 CORS(app)
@@ -13,7 +13,7 @@ i = 0
 def post_sketcher():
     text = request.json.get('text')
     sketch = SketchParser.parse(text)
-    svg = DiagramDrawer.layout_and_draw(sketch)
+    svg = Canvas().draw(sketch)
     return {"svg": svg}
 
 @app.route('/results/<path:path>')
