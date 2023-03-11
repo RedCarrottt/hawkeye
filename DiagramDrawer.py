@@ -5,12 +5,12 @@ import utils
 
 DEBUG = False
 
-class Diag:
+class Diagram:
     def __init__(self, diagType):
         self.type = diagType
         pass
 
-class Rectangle(Diag):
+class Rectangle(Diagram):
     def __init__(self, node, left, top):
         super().__init__('rectangle')
         MIN_WIDTH = 120
@@ -50,19 +50,19 @@ class Rectangle(Diag):
         return (self.left,
                 self.bottom + self.height * Y_RATIO)
 
-    def draw(self, layout, canvas):
+    def draw(self, layout, canvasElem):
         rectangleElem = DrawSVG.Rectangle(
                 self.left, layout.height - self.bottom,
                 self.width, self.height,
                 fill='white', stroke_width=self.stroke_width, stroke='black')
-        canvas.append(rectangleElem)
+        canvasElem.append(rectangleElem)
 
         textLeft = self.left + self.marginLeft
         textBottom = layout.height - self.bottom + self.marginBottom
         textElem = DrawSVG.Text(self.labelText, self.textSize, textLeft, textBottom, fill='black')
-        canvas.append(textElem)
+        canvasElem.append(textElem)
 
-class Circle(Diag):
+class Circle(Diagram):
     def __init__(self, node, left, top):
         super().__init__('circle')
         RADIUS = 5
@@ -97,17 +97,17 @@ class Circle(Diag):
         return (self.left + self.radius * X_RATIO,
                 self.bottom + self.radius * Y_RATIO)
 
-    def draw(self, layout, canvas):
-        circleElem = DrawSVG.Circle(diag.left, layout.height - diag.bottom, diag.radius,
+    def draw(self, layout, canvasElem):
+        circleElem = DrawSVG.Circle(self.left, layout.height - self.bottom, self.radius,
                              fill='white', stroke_width=2, stroke='black')
-        canvas.append(circleElem)
+        canvasElem.append(circleElem)
 
-        textLeft = diag.left + diag.marginLeft
-        textBottom = layout.height - diag.bottom + diag.marginBottom
-        textElem = DrawSVG.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black')
-        canvas.append(textElem)
+        textLeft = self.left + self.marginLeft
+        textBottom = layout.height - self.bottom + self.marginBottom
+        textElem = DrawSVG.Text(self.labelText, self.textSize, textLeft, textBottom, fill='black')
+        canvasElem.append(textElem)
 
-class Diamond(Diag):
+class Diamond(Diagram):
     def __init__(self, node, left, top):
         super().__init__('diamond')
         RADIUS = 10
@@ -144,31 +144,31 @@ class Diamond(Diag):
         return (self.left + self.radius * X_RATIO,
                 self.bottom + self.radius * Y_RATIO)
 
-    def draw(self, layout, canvas):
-        diamondElem = DrawSVG.Lines(diag.left, layout.height - (diag.bottom + 0.5 * diag.radius),
-            diag.left + diag.radius, layout.height - diag.bottom,
-            diag.left, layout.height - (diag.bottom - 0.5 * diag.radius),
-            diag.left - diag.radius, layout.height - diag.bottom,
-            fill='white', stroke_width=diag.stroke_width, stroke='black', close=True)
-        canvas.append(diamondElem)
+    def draw(self, layout, canvasElem):
+        diamondElem = DrawSVG.Lines(self.left, layout.height - (self.bottom + 0.5 * self.radius),
+            self.left + self.radius, layout.height - self.bottom,
+            self.left, layout.height - (self.bottom - 0.5 * self.radius),
+            self.left - self.radius, layout.height - self.bottom,
+            fill='white', stroke_width=self.stroke_width, stroke='black', close=True)
+        canvasElem.append(diamondElem)
 
-        textLeft = diag.left + diag.marginLeft
-        textBottom = layout.height - diag.bottom + diag.marginBottom
-        textElem = DrawSVG.Text(diag.labelText, diag.textSize, textLeft, textBottom, fill='black')
-        canvas.append(textElem)
+        textLeft = self.left + self.marginLeft
+        textBottom = layout.height - self.bottom + self.marginBottom
+        textElem = DrawSVG.Text(self.labelText, self.textSize, textLeft, textBottom, fill='black')
+        canvasElem.append(textElem)
 
-class Line(Diag):
-    def __init__(self, parentDiag, nodeDiag):
+class Line(Diagram):
+    def __init__(self, parentDiagram, nodeDiagram):
         super().__init__('line')
         start_pos = None
         end_pos = None
         self.isAvailable = False
 
-        if parentDiag.type in ['rectangle', 'circle', 'diamond']:
-            start_pos = parentDiag.getStartLinePos()
+        if parentDiagram.type in ['rectangle', 'circle', 'diamond']:
+            start_pos = parentDiagram.getStartLinePos()
 
-        if nodeDiag.type in ['rectangle', 'circle', 'diamond']:
-            end_pos = nodeDiag.getEndLinePos()
+        if nodeDiagram.type in ['rectangle', 'circle', 'diamond']:
+            end_pos = nodeDiagram.getEndLinePos()
 
         if start_pos and end_pos:
             self.maxRight = start_pos[0] if start_pos[0] > end_pos[0] else end_pos[0]
@@ -179,64 +179,14 @@ class Line(Diag):
             self.scale = 6
             self.isAvailable = True
 
-    def draw(self, layout, canvas):
-        arrow = DrawSVG.Marker(-0.1, -0.5, 0.9, 0.5, scale=diag.scale, orient='auto')
+    def draw(self, layout, canvasElem):
+        arrow = DrawSVG.Marker(-0.1, -0.5, 0.9, 0.5, scale=self.scale, orient='auto')
         arrow.append(DrawSVG.Lines(-0.1, -0.5, -0.1, 0.5, 0.9, 0, fill='black', close=True))
         pathElem = DrawSVG.Path(stroke='black', stroke_width=2, fill='none', marker_end=arrow)
-        pathElem.M(diag.pathElem[0], layout.height - diag.pathElem[1]) \
-                .L(diag.pathElem[2], layout.height - diag.pathElem[3]) \
-                .L(diag.pathElem[4] - diag.scale*2, layout.height - diag.pathElem[5])
-        canvas.append(pathElem)
-
-def __layoutRecursively(node, layout, parentDiag):
-    diags = []
-    nodeDiag = None
-
-    nodeDiagType = ''
-    if isinstance(node, Sketch):
-        pass
-    elif isinstance(node, BranchNode):
-        nodeDiagType = 'circle'
-    elif isinstance(node, ForkNode):
-        nodeDiagType = 'diamond'
-    else:
-        nodeDiagType = 'rectangle'
-
-    # Add diagram for the node
-    if nodeDiagType != '':
-        INDENT_WIDTH = 40
-        ROW_HEIGHT = 45
-        left = layout.leftState + INDENT_WIDTH * layout.indentState
-        top = layout.topState
-        DIAGRAM_MARGIN_Y = 15
-        if nodeDiagType == 'rectangle':
-            nodeDiag = Rectangle(node, left, top)
-            diags.append(nodeDiag)
-        elif nodeDiagType == 'circle':
-            nodeDiag = Circle(node, left, top)
-            diags.append(nodeDiag)
-        elif nodeDiagType == 'diamond':
-            nodeDiag = Diamond(node, left, top)
-            diags.append(nodeDiag)
-        if nodeDiag != None:
-            layout.topState = nodeDiag.bottom + DIAGRAM_MARGIN_Y
-
-    # Add lines from the parent node to this node
-    if parentDiag and nodeDiag:
-        lineDiag = Line(parentDiag, nodeDiag)
-        if lineDiag.isAvailable:
-            diags.append(lineDiag)
-
-    if node.children:
-        parentDiag = nodeDiag if nodeDiag else parentDiag
-        if not isinstance(node, Sketch):
-            layout.indentState += 1
-        for childNode in node.children:
-            childDiags = __layoutRecursively(childNode, layout, parentDiag)
-            diags += childDiags
-        if not isinstance(node, Sketch):
-            layout.indentState -= 1
-    return diags
+        pathElem.M(self.path[0], layout.height - self.path[1]) \
+                .L(self.path[2], layout.height - self.path[3]) \
+                .L(self.path[4] - self.scale*2, layout.height - self.path[5])
+        canvasElem.append(pathElem)
 
 class Layout:
     def __init__(self):
@@ -252,35 +202,83 @@ class Layout:
         self.topState = self.CANVAS_MARGIN_Y
         self.indentState = 0
 
-        self.diags = []
+        self.diagrams = []
 
     def addEndMargins(self):
         self.width += self.CANVAS_MARGIN_X * 2
         self.height += self.CANVAS_MARGIN_Y * 2
 
-def __layout(node):
-    layout = Layout()
-    layout.diags = __layoutRecursively(node, layout, None)
+    def layout(self, sketch):
+        self.diagrams = self.__layoutNode(sketch, None)
 
-    for diag in layout.diags:
-        layout.width = diag.maxRight if diag.maxRight > layout.width else layout.width
-        layout.height = diag.maxTop if diag.maxTop > layout.height else layout.height
-    layout.addEndMargins()
+        for diagram in self.diagrams:
+            self.width = diagram.maxRight if diagram.maxRight > self.width else self.width
+            self.height = diagram.maxTop if diagram.maxTop > self.height else self.height
+        self.addEndMargins()
+        return self
 
-    return layout
+    def __layoutNode(self, node, parentDiagram):
+        diagrams = []
+        nodeDiagram = None
 
-def __draw(layout):
-    # convert diag to svgElement -> canvas.append(svgElement)
-    canvas = DrawSVG.Drawing(layout.width, layout.height, displayInline=False)
-    for diag in layout.diags:
-        diag.draw(layout, canvas)
-    return canvas
+        nodeDiagramType = ''
+        if isinstance(node, Sketch):
+            pass
+        elif isinstance(node, BranchNode):
+            nodeDiagramType = 'circle'
+        elif isinstance(node, ForkNode):
+            nodeDiagramType = 'diamond'
+        else:
+            nodeDiagramType = 'rectangle'
+
+        # Add diagram for the node
+        if nodeDiagramType != '':
+            INDENT_WIDTH = 40
+            ROW_HEIGHT = 45
+            left = self.leftState + INDENT_WIDTH * self.indentState
+            top = self.topState
+            DIAGRAM_MARGIN_Y = 15
+            if nodeDiagramType == 'rectangle':
+                nodeDiagram = Rectangle(node, left, top)
+                diagrams.append(nodeDiagram)
+            elif nodeDiagramType == 'circle':
+                nodeDiagram = Circle(node, left, top)
+                diagrams.append(nodeDiagram)
+            elif nodeDiagramType == 'diamond':
+                nodeDiagram = Diamond(node, left, top)
+                diagrams.append(nodeDiagram)
+            if nodeDiagram != None:
+                self.topState = nodeDiagram.bottom + DIAGRAM_MARGIN_Y
+
+        # Add lines from the parent node to this node
+        if parentDiagram and nodeDiagram:
+            lineDiag = Line(parentDiagram, nodeDiagram)
+            if lineDiag.isAvailable:
+                diagrams.append(lineDiag)
+
+        if node.children:
+            parentDiagram = nodeDiagram if nodeDiagram else parentDiagram
+            if not isinstance(node, Sketch):
+                self.indentState += 1
+            for childNode in node.children:
+                childDiags = self.__layoutNode(childNode, parentDiagram)
+                diagrams += childDiags
+            if not isinstance(node, Sketch):
+                self.indentState -= 1
+        return diagrams
+
+    def draw(self):
+        # convert diagram to svgElement -> canvasElem.append(svgElement)
+        self.canvasElem = DrawSVG.Drawing(self.width, self.height, displayInline=False)
+        for diagram in self.diagrams:
+            diagram.draw(self, canvasElem)
+        return canvasElem
 
 def layout_and_draw(sketch, filename=None):
-    layout = __layout(sketch)
-    canvas = __draw(layout)
+    layout = Layout()
+    layout.layout(sketch)
+    canvasElem = layout.draw()
     if filename is None:
-        return canvas.asSvg()
+        return canvasElem.asSvg()
     else:
-        canvas.saveSvg(filename)
-    return svg_text
+        canvasElem.saveSvg(filename)
