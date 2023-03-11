@@ -3,6 +3,10 @@ import drawSvg as DrawSVG
 from SketchParser import Sketch, Node, FunctionNode, IterationNode, ForkNode, BranchNode
 import utils
 
+# Coordination system
+# 1) Diagrams: LU (origin at left-up)
+# 2) SVG: LD (origin at left-down)
+
 DEBUG = False
 
 class Diagram:
@@ -51,15 +55,18 @@ class Rectangle(Diagram):
                 self.bottom + self.height * Y_RATIO)
 
     def draw(self, canvas):
+        rectanglePos = canvas.LUtoLD((self.left, self.bottom))
         rectangleElem = DrawSVG.Rectangle(
-                self.left, canvas.height - self.bottom,
+                rectanglePos[0], rectanglePos[1],
                 self.width, self.height,
                 fill='white', stroke_width=self.stroke_width, stroke='black')
         canvas.appendSVG(rectangleElem)
 
-        textLeft = self.left + self.marginLeft
-        textBottom = canvas.height - self.bottom + self.marginBottom
-        textElem = DrawSVG.Text(self.labelText, self.textSize, textLeft, textBottom, fill='black')
+        textPos = canvas.LUtoLD((self.left + self.marginLeft,
+                                 self.bottom - self.marginBottom))
+        textElem = DrawSVG.Text(self.labelText, self.textSize,
+                                textPos[0], textPos[1],
+                                fill='black')
         canvas.appendSVG(textElem)
 
 class Circle(Diagram):
@@ -98,13 +105,16 @@ class Circle(Diagram):
                 self.bottom + self.radius * Y_RATIO)
 
     def draw(self, canvas):
-        circleElem = DrawSVG.Circle(self.left, canvas.height - self.bottom, self.radius,
+        circlePos = canvas.LUtoLD((self.left, self.bottom))
+        circleElem = DrawSVG.Circle(
+                             circlePos[0], circlePos[1], self.radius,
                              fill='white', stroke_width=2, stroke='black')
         canvas.appendSVG(circleElem)
 
-        textLeft = self.left + self.marginLeft
-        textBottom = canvas.height - self.bottom + self.marginBottom
-        textElem = DrawSVG.Text(self.labelText, self.textSize, textLeft, textBottom, fill='black')
+        textPos = canvas.LUtoLD((self.left + self.marginLeft,
+                                 self.bottom - self.marginBottom))
+        textElem = DrawSVG.Text(self.labelText, self.textSize,
+                                textPos[0], textPos[1], fill='black')
         canvas.appendSVG(textElem)
 
 class Diamond(Diagram):
@@ -145,16 +155,25 @@ class Diamond(Diagram):
                 self.bottom + self.radius * Y_RATIO)
 
     def draw(self, canvas):
-        diamondElem = DrawSVG.Lines(self.left, canvas.height - (self.bottom + 0.5 * self.radius),
-            self.left + self.radius, canvas.height - self.bottom,
-            self.left, canvas.height - (self.bottom - 0.5 * self.radius),
-            self.left - self.radius, canvas.height - self.bottom,
+        diamondPos = ( 
+            canvas.LUtoLD((self.left, self.bottom + 0.5 * self.radius)),
+            canvas.LUtoLD((self.left + self.radius, self.bottom)),
+            canvas.LUtoLD((self.left, self.bottom - 0.5 * self.radius)),
+            canvas.LUtoLD((self.left - self.radius, self.bottom)),
+        )
+        diamondElem = DrawSVG.Lines(
+            diamondPos[0][0], diamondPos[0][1],
+            diamondPos[1][0], diamondPos[1][1],
+            diamondPos[2][0], diamondPos[2][1],
+            diamondPos[3][0], diamondPos[3][1],
             fill='white', stroke_width=self.stroke_width, stroke='black', close=True)
         canvas.appendSVG(diamondElem)
 
-        textLeft = self.left + self.marginLeft
-        textBottom = canvas.height - self.bottom + self.marginBottom
-        textElem = DrawSVG.Text(self.labelText, self.textSize, textLeft, textBottom, fill='black')
+        textPos = canvas.LUtoLD(self.left + self.marginLeft,
+                                self.bottom - self.marginBottom)
+        textElem = DrawSVG.Text(self.labelText, self.textSize,
+                                textPos[0], textPos[1],
+                                fill='black')
         canvas.appendSVG(textElem)
 
 class Line(Diagram):
@@ -182,10 +201,16 @@ class Line(Diagram):
     def draw(self, canvas):
         arrow = DrawSVG.Marker(-0.1, -0.5, 0.9, 0.5, scale=self.scale, orient='auto')
         arrow.append(DrawSVG.Lines(-0.1, -0.5, -0.1, 0.5, 0.9, 0, fill='black', close=True))
+
+        pathPos = (
+            canvas.LUtoLD(self.path[0:2]),
+            canvas.LUtoLD(self.path[2:4]),
+            canvas.LUtoLD((self.path[4] - self.scale*2, self.path[5]))
+        )
         pathElem = DrawSVG.Path(stroke='black', stroke_width=2, fill='none', marker_end=arrow)
-        pathElem.M(self.path[0], canvas.height - self.path[1]) \
-                .L(self.path[2], canvas.height - self.path[3]) \
-                .L(self.path[4] - self.scale*2, canvas.height - self.path[5])
+        pathElem.M(pathPos[0][0], pathPos[0][1]) \
+                .L(pathPos[1][0], pathPos[1][1]) \
+                .L(pathPos[2][0], pathPos[2][1])
         canvas.appendSVG(pathElem)
 
 class Canvas:
@@ -270,3 +295,6 @@ class Canvas:
 
     def appendSVG(self, child):
         self.canvasElem.append(child)
+
+    def LUtoLD(self, pos):
+        return (pos[0], self.height - pos[1])
