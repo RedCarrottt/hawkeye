@@ -12,6 +12,7 @@ function App() {
 
     function handleEditorDidMount(editor, monaco) {
         editorRef.current = editor;
+        setTimeout(onRenderTriggered(), 2000);
     }
 
     function onRenderTriggered() {
@@ -56,7 +57,7 @@ function App() {
                     onMount={handleEditorDidMount} />
                 </div>
             </div>
-            <div style={{width: "50%", float: "left"}}>
+            <div style={{width: "50%", textAlign:"left", float: "left"}}>
                 <span dangerouslySetInnerHTML={{__html: svg}} />
             </div>
         </div>
