@@ -226,36 +226,23 @@ class Canvas:
 
     def __layoutNode(self, node, parentDiagram):
         diagrams = []
-        nodeDiagram = None
-
-        nodeDiagramType = ''
-        if isinstance(node, Sketch):
-            pass
-        elif isinstance(node, BranchNode):
-            nodeDiagramType = 'circle'
-        elif isinstance(node, ForkNode):
-            nodeDiagramType = 'diamond'
-        else:
-            nodeDiagramType = 'rectangle'
 
         # Add diagram for the node
-        if nodeDiagramType != '':
+        nodeDiagram = None
+        if not isinstance(node, Sketch):
             INDENT_WIDTH = 40
             ROW_HEIGHT = 45
             left = self.leftState + INDENT_WIDTH * self.indentState
             top = self.topState
             DIAGRAM_MARGIN_Y = 15
-            if nodeDiagramType == 'rectangle':
-                nodeDiagram = Rectangle(node, left, top)
-                diagrams.append(nodeDiagram)
-            elif nodeDiagramType == 'circle':
+            if isinstance(node, BranchNode):
                 nodeDiagram = Circle(node, left, top)
-                diagrams.append(nodeDiagram)
-            elif nodeDiagramType == 'diamond':
+            elif isinstance(node, ForkNode):
                 nodeDiagram = Diamond(node, left, top)
-                diagrams.append(nodeDiagram)
-            if nodeDiagram != None:
-                self.topState = nodeDiagram.bottom + DIAGRAM_MARGIN_Y
+            else:
+                nodeDiagram = Rectangle(node, left, top)
+            diagrams.append(nodeDiagram)
+            self.topState = nodeDiagram.bottom + DIAGRAM_MARGIN_Y
 
         # Add lines from the parent node to this node
         if parentDiagram and nodeDiagram:
