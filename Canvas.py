@@ -202,11 +202,9 @@ class Canvas:
         self.topState = self.CANVAS_MARGIN_Y
         self.indentState = 0
 
-        self.diagrams = []
-
     def draw(self, sketch, filename = None):
-        self.__layout(sketch)
-        canvasElem = self.__render()
+        diagrams = self.__layout(sketch)
+        canvasElem = self.__render(diagrams)
         if filename is None:
             return canvasElem.asSvg()
         else:
@@ -218,12 +216,13 @@ class Canvas:
         self.height += self.CANVAS_MARGIN_Y * 2
 
     def __layout(self, sketch):
-        self.diagrams = self.__layoutNode(sketch, None)
+        diagrams = self.__layoutNode(sketch, None)
 
-        for diagram in self.diagrams:
+        for diagram in diagrams:
             self.width = diagram.maxRight if diagram.maxRight > self.width else self.width
             self.height = diagram.maxTop if diagram.maxTop > self.height else self.height
         self.__addEndMargins()
+        return diagrams
 
     def __layoutNode(self, node, parentDiagram):
         diagrams = []
@@ -275,9 +274,9 @@ class Canvas:
                 self.indentState -= 1
         return diagrams
 
-    def __render(self):
+    def __render(self, diagrams):
         # convert diagram to svgElement -> canvasElem.append(svgElement)
         canvasElem = DrawSVG.Drawing(self.width, self.height, displayInline=False)
-        for diagram in self.diagrams:
+        for diagram in diagrams:
             diagram.draw(self, canvasElem)
         return canvasElem
