@@ -50,17 +50,17 @@ class Rectangle(Diagram):
         return (self.left,
                 self.bottom + self.height * Y_RATIO)
 
-    def draw(self, canvas, canvasElem):
+    def draw(self, canvas):
         rectangleElem = DrawSVG.Rectangle(
                 self.left, canvas.height - self.bottom,
                 self.width, self.height,
                 fill='white', stroke_width=self.stroke_width, stroke='black')
-        canvasElem.append(rectangleElem)
+        canvas.appendSVG(rectangleElem)
 
         textLeft = self.left + self.marginLeft
         textBottom = canvas.height - self.bottom + self.marginBottom
         textElem = DrawSVG.Text(self.labelText, self.textSize, textLeft, textBottom, fill='black')
-        canvasElem.append(textElem)
+        canvas.appendSVG(textElem)
 
 class Circle(Diagram):
     def __init__(self, node, left, top):
@@ -97,15 +97,15 @@ class Circle(Diagram):
         return (self.left + self.radius * X_RATIO,
                 self.bottom + self.radius * Y_RATIO)
 
-    def draw(self, canvas, canvasElem):
+    def draw(self, canvas):
         circleElem = DrawSVG.Circle(self.left, canvas.height - self.bottom, self.radius,
                              fill='white', stroke_width=2, stroke='black')
-        canvasElem.append(circleElem)
+        canvas.appendSVG(circleElem)
 
         textLeft = self.left + self.marginLeft
         textBottom = canvas.height - self.bottom + self.marginBottom
         textElem = DrawSVG.Text(self.labelText, self.textSize, textLeft, textBottom, fill='black')
-        canvasElem.append(textElem)
+        canvas.appendSVG(textElem)
 
 class Diamond(Diagram):
     def __init__(self, node, left, top):
@@ -144,18 +144,18 @@ class Diamond(Diagram):
         return (self.left + self.radius * X_RATIO,
                 self.bottom + self.radius * Y_RATIO)
 
-    def draw(self, canvas, canvasElem):
+    def draw(self, canvas):
         diamondElem = DrawSVG.Lines(self.left, canvas.height - (self.bottom + 0.5 * self.radius),
             self.left + self.radius, canvas.height - self.bottom,
             self.left, canvas.height - (self.bottom - 0.5 * self.radius),
             self.left - self.radius, canvas.height - self.bottom,
             fill='white', stroke_width=self.stroke_width, stroke='black', close=True)
-        canvasElem.append(diamondElem)
+        canvas.appendSVG(diamondElem)
 
         textLeft = self.left + self.marginLeft
         textBottom = canvas.height - self.bottom + self.marginBottom
         textElem = DrawSVG.Text(self.labelText, self.textSize, textLeft, textBottom, fill='black')
-        canvasElem.append(textElem)
+        canvas.appendSVG(textElem)
 
 class Line(Diagram):
     def __init__(self, parentDiagram, nodeDiagram):
@@ -179,14 +179,14 @@ class Line(Diagram):
             self.scale = 6
             self.isAvailable = True
 
-    def draw(self, canvas, canvasElem):
+    def draw(self, canvas):
         arrow = DrawSVG.Marker(-0.1, -0.5, 0.9, 0.5, scale=self.scale, orient='auto')
         arrow.append(DrawSVG.Lines(-0.1, -0.5, -0.1, 0.5, 0.9, 0, fill='black', close=True))
         pathElem = DrawSVG.Path(stroke='black', stroke_width=2, fill='none', marker_end=arrow)
         pathElem.M(self.path[0], canvas.height - self.path[1]) \
                 .L(self.path[2], canvas.height - self.path[3]) \
                 .L(self.path[4] - self.scale*2, canvas.height - self.path[5])
-        canvasElem.append(pathElem)
+        canvas.appendSVG(pathElem)
 
 class Canvas:
     def __init__(self):
@@ -276,7 +276,10 @@ class Canvas:
 
     def __render(self, diagrams):
         # convert diagram to svgElement -> canvasElem.append(svgElement)
-        canvasElem = DrawSVG.Drawing(self.width, self.height, displayInline=False)
+        self.canvasElem = DrawSVG.Drawing(self.width, self.height, displayInline=False)
         for diagram in diagrams:
-            diagram.draw(self, canvasElem)
-        return canvasElem
+            diagram.draw(self)
+        return self.canvasElem
+
+    def appendSVG(self, child):
+        self.canvasElem.append(child)
