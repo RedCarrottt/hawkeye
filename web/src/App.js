@@ -1,8 +1,10 @@
 import React from 'react';
 import { useState, useEffect, useRef } from 'react'
 import axios from 'axios';
-import Button from '@mui/material/Button';
 import Editor from '@monaco-editor/react';
+import { Box, CssBaseline, AppBar, Button, Typography, Toolbar } from '@mui/material';
+import CodeIcon from '@mui/icons-material/Code';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 
 function App() {
     const editorRef = useRef(null);
@@ -26,6 +28,9 @@ function App() {
                         });
     }
 
+    function onFileListButtonClicked() {
+    }
+
     function onRenderButtonClicked() {
         onRenderTriggered();
     }
@@ -40,27 +45,62 @@ function App() {
             document.addEventListener('keydown', onKeyDown);
             }, []);
 
+    const [anchorElNav, setAnchorElNav] = React.useState(null);
+    const [anchorElUser, setAnchorElUser] = React.useState(null);
+
+    const handleOpenNavMenu = (event) => {
+        setAnchorElNav(event.currentTarget);
+    };
+    const handleOpenUserMenu = (event) => {
+        setAnchorElUser(event.currentTarget);
+    };
+
+    const handleCloseNavMenu = () => {
+        setAnchorElNav(null);
+    };
+
+    const handleCloseUserMenu = () => {
+        setAnchorElUser(null);
+    };
+
+    const menuItems = [
+        ['File List', 'fileList', onFileListButtonClicked],
+        ['Render (Ctrl + R)', 'render', onRenderButtonClicked]
+    ]
+
     return (
-        <div style={{textAlign:"center"}}>
-            <div style={{width: "50%", float: "left"}}>
-                <Button onClick={onRenderButtonClicked}
-                    variant="contained"
-                    style={{margin: "10px"}}>
-                    Render It! (Ctrl + R)
-                </Button>
-                <div style={{
-                    border: "2px solid",
-                    margin: "10px"}}>
-                    <Editor
-                    defaultValue={initialCode} defaultLanguage="python"
-                    height="90vh"
-                    onMount={handleEditorDidMount} />
+        <Box sx={{ display: 'flex' }}>
+            <CssBaseline />
+            <AppBar component="nav">
+                <Toolbar>
+                    {menuItems.map((menuItem) => 
+                        <Button key={menuItem[1]} 
+                            color="inherit" variant="outlined" style={{marginRight:"10px"}}
+                            onClick={menuItem[2]}>
+                            {menuItem[0]}
+                        </Button>
+                    )}
+                </Toolbar>
+            </AppBar>
+            <Box sx={{ display: { xs: 'none', sm: 'block', width: "100%", textAlign:'center', margin: "10px"} }}>
+                <Toolbar />
+                <div style={{width: "50%", float: "left", textAlign:'left'}}>
+                    <Typography variant="h4"><CodeIcon /> Sketch Editor</Typography>
+                    <div style={{
+                        border: "2px solid",
+                        margin: "10px"}}>
+                        <Editor
+                        defaultValue={initialCode} defaultLanguage="python"
+                        height="80vh"
+                        onMount={handleEditorDidMount} />
+                    </div>
                 </div>
-            </div>
-            <div style={{width: "50%", textAlign:"left", float: "left"}}>
-                <span dangerouslySetInnerHTML={{__html: svg}} />
-            </div>
-        </div>
+                <div style={{width: "50%", textAlign:"left", float: "left", textAlign:'left'}}>
+                    <Typography variant="h4"><AccountTreeIcon /> Results</Typography>
+                    <span dangerouslySetInnerHTML={{__html: svg}} />
+                </div>
+            </Box>
+        </Box>
     );
     }
 
