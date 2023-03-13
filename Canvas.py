@@ -54,7 +54,7 @@ class Rectangle(Diagram):
         return (self.left,
                 self.bottom + self.height * Y_RATIO)
 
-    def draw(self, canvas):
+    def render(self, canvas):
         rectanglePos = canvas.LUtoLD((self.left, self.bottom))
         rectangleElem = DrawSVG.Rectangle(
                 rectanglePos[0], rectanglePos[1],
@@ -104,7 +104,7 @@ class Circle(Diagram):
         return (self.left + self.radius * X_RATIO,
                 self.bottom + self.radius * Y_RATIO)
 
-    def draw(self, canvas):
+    def render(self, canvas):
         circlePos = canvas.LUtoLD((self.left, self.bottom))
         circleElem = DrawSVG.Circle(
                              circlePos[0], circlePos[1], self.radius,
@@ -154,7 +154,7 @@ class Diamond(Diagram):
         return (self.left + self.radius * X_RATIO,
                 self.bottom + self.radius * Y_RATIO)
 
-    def draw(self, canvas):
+    def render(self, canvas):
         diamondPos = ( 
             canvas.LUtoLD((self.left, self.bottom + 0.5 * self.radius)),
             canvas.LUtoLD((self.left + self.radius, self.bottom)),
@@ -198,7 +198,7 @@ class Line(Diagram):
             self.scale = 6
             self.isAvailable = True
 
-    def draw(self, canvas):
+    def render(self, canvas):
         arrow = DrawSVG.Marker(-0.1, -0.5, 0.9, 0.5, scale=self.scale, orient='auto')
         arrow.append(DrawSVG.Lines(-0.1, -0.5, -0.1, 0.5, 0.9, 0, fill='black', close=True))
 
@@ -290,7 +290,7 @@ class Canvas:
         # convert diagram to svgElement -> canvasElem.append(svgElement)
         self.canvasElem = DrawSVG.Drawing(self.width, self.height, displayInline=False)
         for diagram in diagrams:
-            diagram.draw(self)
+            diagram.render(self)
         return self.canvasElem
 
     def appendSVG(self, child):
