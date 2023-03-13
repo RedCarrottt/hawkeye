@@ -65,7 +65,7 @@ function App() {
 
     const menuItems = [
         ['File List', 'fileList', onFileListButtonClicked],
-        ['Render (Ctrl + R)', 'render', onRenderButtonClicked]
+        ['Render Results (Ctrl + R)', 'render', onRenderButtonClicked]
     ]
 
     return (
