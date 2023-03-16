@@ -17,7 +17,9 @@ $ python3 ./hawkeye.py
 ```
 
 ## How to use by docker
+In case of x86_64,
+
 ```
-$ docker build .
+$ docker build ./docker/x86_64
 $ docker run -p 3000-3001:3000-3001 -it <docker ID>
 ```
