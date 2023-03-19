@@ -2,7 +2,8 @@ import React from 'react';
 import { useState, useEffect, useRef } from 'react'
 import axios from 'axios';
 import Editor from '@monaco-editor/react';
-import { Box, CssBaseline, AppBar, Button, Typography, Toolbar } from '@mui/material';
+import { Box, CssBaseline, AppBar, Toolbar, Typography } from '@mui/material';
+import { Button, FormControlLabel, Switch } from '@mui/material';
 import CodeIcon from '@mui/icons-material/Code';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 
@@ -11,13 +12,17 @@ function App() {
     const initialCode = "Function A:\n  Function B";
     const [svgUrl, setSvgUrl] = React.useState("");
     const [svg, setSvg] = React.useState("");
+    const [autoRefreshSwitch, setAutoRefreshSwitch] = React.useState(true);
 
     function handleEditorDidMount(editor, monaco) {
         editorRef.current = editor;
-        setTimeout(onRenderTriggered(), 2000);
+        setTimeout(() => {
+            refreshResults();
+            changeAutoRefresh(true);
+        }, 2000);
     }
 
-    function onRenderTriggered() {
+    function refreshResults() {
         var code = editorRef.current.getValue();
         console.log(code)
             axios.post('http://localhost:3001/sketcher', {text: code})
@@ -31,14 +36,27 @@ function App() {
     function onFileListButtonClicked() {
     }
 
-    function onRenderButtonClicked() {
-        onRenderTriggered();
+    function onRefreshButtonClicked() {
+        refreshResults();
     }
 
     function onKeyDown(e) {
         if (e.key == 'r' && e.ctrlKey) {
-            onRenderTriggered()
+            refreshResults()
         }
+    }
+
+    function onAutoRefreshSwitchChange(e) {
+        changeAutoRefresh(e.target.checked);
+    }
+
+    function changeAutoRefresh(isEnable) {
+        setAutoRefreshSwitch(isEnable);
+    }
+
+    function onEditorChange() {
+        if(autoRefreshSwitch)
+            refreshResults();
     }
 
     useEffect(() => {
@@ -65,7 +83,7 @@ function App() {
 
     const menuItems = [
         ['File List', 'fileList', onFileListButtonClicked],
-        ['Render Results (Ctrl + R)', 'render', onRenderButtonClicked]
+        ['Refresh Results (Ctrl + R)', 'render', onRefreshButtonClicked]
     ]
 
     return (
@@ -73,6 +91,7 @@ function App() {
             <CssBaseline />
             <AppBar component="nav">
                 <Toolbar>
+                    <Typography variant="h4" style={{marginRight:"20px"}}>HawkEye</Typography>
                     {menuItems.map((menuItem) => 
                         <Button key={menuItem[1]} 
                             color="inherit" variant="outlined" style={{marginRight:"10px"}}
@@ -80,6 +99,9 @@ function App() {
                             {menuItem[0]}
                         </Button>
                     )}
+                    <FormControlLabel control={
+                        <Switch defaultChecked color="warning" checked={autoRefreshSwitch} onChange={onAutoRefreshSwitchChange} />
+                        } label="Auto-Refresh" />
                 </Toolbar>
             </AppBar>
             <Box sx={{ display: { xs: 'none', sm: 'block', width: "100%", textAlign:'center', margin: "10px"} }}>
@@ -92,7 +114,8 @@ function App() {
                         <Editor
                         defaultValue={initialCode} defaultLanguage="python"
                         height="80vh"
-                        onMount={handleEditorDidMount} />
+                        onMount={handleEditorDidMount}
+                        onChange={onEditorChange} />
                     </div>
                 </div>
                 <div style={{width: "50%", textAlign:"left", float: "left", textAlign:'left'}}>
