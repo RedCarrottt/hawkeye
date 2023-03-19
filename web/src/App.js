@@ -48,6 +48,8 @@ function App() {
     }
 
     function changeAutoRefresh(isEnable) {
+        if (isEnable)
+            refreshResults();
         setAutoRefreshSwitch(isEnable);
     }
 
