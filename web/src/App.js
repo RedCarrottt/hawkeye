@@ -41,9 +41,6 @@ function App() {
     }
 
     function onKeyDown(e) {
-        if (e.key == 'r' && e.ctrlKey) {
-            refreshResults()
-        }
     }
 
     function onAutoRefreshSwitchChange(e) {
@@ -55,7 +52,7 @@ function App() {
     }
 
     function onEditorChange() {
-        if(autoRefreshSwitch)
+        if (autoRefreshSwitch)
             refreshResults();
     }
 
@@ -83,7 +80,6 @@ function App() {
 
     const menuItems = [
         ['File List', 'fileList', onFileListButtonClicked],
-        ['Refresh Results (Ctrl + R)', 'render', onRefreshButtonClicked]
     ]
 
     return (
@@ -94,7 +90,7 @@ function App() {
                     <Typography variant="h4" style={{marginRight:"20px"}}>HawkEye</Typography>
                     {menuItems.map((menuItem) => 
                         <Button key={menuItem[1]} 
-                            color="inherit" variant="outlined" style={{marginRight:"10px"}}
+                            color="inherit" variant="outlined" style={{marginRight:"20px"}}
                             onClick={menuItem[2]}>
                             {menuItem[0]}
                         </Button>
