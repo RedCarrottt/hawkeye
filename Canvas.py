@@ -169,8 +169,8 @@ class Diamond(Diagram):
             fill='white', stroke_width=self.stroke_width, stroke='black', close=True)
         canvas.appendSVG(diamondElem)
 
-        textPos = canvas.LUtoLD(self.left + self.marginLeft,
-                                self.bottom - self.marginBottom)
+        textPos = canvas.LUtoLD((self.left + self.marginLeft,
+                                self.bottom - self.marginBottom))
         textElem = DrawSVG.Text(self.labelText, self.textSize,
                                 textPos[0], textPos[1],
                                 fill='black')
