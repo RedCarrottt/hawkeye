@@ -3,12 +3,14 @@ import { useState, useEffect, useRef } from 'react'
 import axios from 'axios';
 import Editor from '@monaco-editor/react';
 import { Box, CssBaseline, AppBar, Toolbar, Typography } from '@mui/material';
-import { Button, FormControlLabel, Switch } from '@mui/material';
+import { Button, IconButton, FormControlLabel, Switch, TextField } from '@mui/material';
 import { Modal, List, ListItem, ListItemButton , ListItemIcon, ListItemText } from '@mui/material';
 import CodeIcon from '@mui/icons-material/Code';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ExploreOutlinedIcon from '@mui/icons-material/ExploreOutlined';
 import ArticleIcon from '@mui/icons-material/Article';
+import ModeEditIcon from '@mui/icons-material/ModeEdit';
+import CheckIcon from '@mui/icons-material/Check';
 
 function App() {
     const editorRef = useRef(null);
@@ -17,6 +19,8 @@ function App() {
     const [svg, setSvg] = React.useState("");
     const [autoRefreshSwitch, setAutoRefreshSwitch] = React.useState(true);
     const [fileSelectorOpened, setFileSelectorOpened] = React.useState(false);
+    const [filename, setFilename] = React.useState("hello.he");
+    const [editingFilename, setEditingFilename] = React.useState(false);
 
     function handleEditorDidMount(editor, monaco) {
         editorRef.current = editor;
@@ -35,6 +39,11 @@ function App() {
                     }).catch(function(exception) {
                         console.log(exception);
                         });
+    }
+
+    function onFileItemClicked() {
+        // TODO: select file
+        setFileSelectorOpened(false);
     }
 
     function onSelectFileButtonClicked() {
@@ -117,7 +126,26 @@ function App() {
             <Box sx={{ display: { xs: 'none', sm: 'block', width: "100%", textAlign:'center', margin: "10px"} }}>
                 <Toolbar />
                 <div style={{width: "50%", float: "left", textAlign:'left'}}>
-                    <Typography variant="h4"><CodeIcon sx={{fontSize: 28}} /> Sketch Editor</Typography>
+                    <Typography variant="h4">
+                        <ArticleIcon sx={{fontSize: 28, marginRight: '10px'}} />
+                        {(editingFilename) ?
+                            <>
+                                <TextField id="outlined-basic" label="File Name" variant="outlined" size="small" value={filename}
+                                    onChange={(e) => { setFilename(e.target.value); }}/>
+                                <Button key="confirmFilenameButton"
+                                    color="primary" variant="outlined" size="small" style={{marginLeft:"10px"}}
+                                    onClick={() => { setEditingFilename(false); }}>
+                                    <CheckIcon style={{marginRight:"5px"}} /> Confirm
+                                </Button>
+                            </> :
+                            <>{filename}
+                                <Button key="editFilenameButton"
+                                    color="primary" variant="outlined" size="small" style={{marginLeft:"10px"}}
+                                    onClick={() => { setEditingFilename(true); }}>
+                                    <ModeEditIcon style={{marginRight:"5px"}} /> Rename
+                                </Button>
+                           </>}
+                    </Typography>
                     <div style={{
                         border: "2px solid",
                         margin: "10px"}}>
@@ -150,7 +178,7 @@ function App() {
             <List id="file-selector-description" sx={{ mt: 2 }}>
                 {fileList.map((fileItem) => 
                     <ListItem disablePadding>
-                        <ListItemButton>
+                        <ListItemButton onClick={onFileItemClicked}>
                             <ListItemIcon><ArticleIcon /></ListItemIcon>
                             <ListItemText primary={fileItem} />
                         </ListItemButton>
