@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import axios from 'axios';
 import Editor from '@monaco-editor/react';
 import { Box, CssBaseline, AppBar, Toolbar, Typography } from '@mui/material';
-import { Button, IconButton, FormControlLabel, Switch, TextField } from '@mui/material';
+import { Button, ButtonGroup, FormControlLabel, Switch, TextField } from '@mui/material';
 import { Modal, List, ListItem, ListItemButton , ListItemIcon, ListItemText } from '@mui/material';
 import CodeIcon from '@mui/icons-material/Code';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
@@ -11,6 +11,7 @@ import ExploreOutlinedIcon from '@mui/icons-material/ExploreOutlined';
 import ArticleIcon from '@mui/icons-material/Article';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import CheckIcon from '@mui/icons-material/Check';
+import DownloadIcon from '@mui/icons-material/Download';
 
 function App() {
     const editorRef = useRef(null);
@@ -25,12 +26,12 @@ function App() {
     function handleEditorDidMount(editor, monaco) {
         editorRef.current = editor;
         setTimeout(() => {
-            refreshResults();
+            refreshDiagram();
             changeAutoRefresh(true);
         }, 2000);
     }
 
-    function refreshResults() {
+    function refreshDiagram() {
         var code = editorRef.current.getValue();
         console.log(code)
             axios.post('http://localhost:3001/sketcher', {text: code})
@@ -63,13 +64,13 @@ function App() {
 
     function changeAutoRefresh(isEnable) {
         if (isEnable)
-            refreshResults();
+            refreshDiagram();
         setAutoRefreshSwitch(isEnable);
     }
 
     function onEditorChange() {
         if (autoRefreshSwitch)
-            refreshResults();
+            refreshDiagram();
     }
 
     useEffect(() => {
@@ -126,26 +127,30 @@ function App() {
             <Box sx={{ display: { xs: 'none', sm: 'block', width: "100%", textAlign:'center', margin: "10px"} }}>
                 <Toolbar />
                 <div style={{width: "50%", float: "left", textAlign:'left'}}>
-                    <Typography variant="h4">
-                        <ArticleIcon sx={{fontSize: 28, marginRight: '10px'}} />
+                    <Typography noWrap variant="h4">
+                        <ArticleIcon sx={{fontSize: 28, marginRight: '5px'}} />
                         {(editingFilename) ?
                             <>
-                                <TextField id="outlined-basic" label="File Name" variant="outlined" size="small" value={filename}
+                                <TextField id="outlined-basic" variant="outlined" size="small" value={filename} sx={{width: "80%"}}
                                     onChange={(e) => { setFilename(e.target.value); }}/>
-                                <Button key="confirmFilenameButton"
-                                    color="primary" variant="outlined" size="small" style={{marginLeft:"10px"}}
-                                    onClick={() => { setEditingFilename(false); }}>
-                                    <CheckIcon style={{marginRight:"5px"}} /> Confirm
-                                </Button>
                             </> :
                             <>{filename}
-                                <Button key="editFilenameButton"
-                                    color="primary" variant="outlined" size="small" style={{marginLeft:"10px"}}
-                                    onClick={() => { setEditingFilename(true); }}>
-                                    <ModeEditIcon style={{marginRight:"5px"}} /> Rename
-                                </Button>
                            </>}
                     </Typography>
+                    <ButtonGroup variant="contained" sx={{marginTop: '5px'}}>
+                        {(editingFilename) ?
+                        <Button key="confirmFilenameButton" size="small"
+                            onClick={() => { setEditingFilename(false); }}>
+                            <CheckIcon style={{marginRight:"5px"}} /> Confirm File Name
+                        </Button> :
+                        <Button key="editFilenameButton" size="small"
+                            onClick={() => { setEditingFilename(true); }}>
+                            <ModeEditIcon style={{marginRight:"5px"}} /> Rename
+                        </Button>}
+                        <Button key="downloadSketchFileButton" size="small">
+                            <DownloadIcon style={{marginRight:"5px"}} /> Download
+                        </Button>
+                    </ButtonGroup>
                     <div style={{
                         border: "2px solid",
                         margin: "10px"}}>
@@ -157,8 +162,20 @@ function App() {
                     </div>
                 </div>
                 <div style={{width: "50%", textAlign:"left", float: "left", textAlign:'left'}}>
-                    <Typography variant="h4"><AccountTreeIcon sx={{fontSize: 28}} /> Results</Typography>
-                    <span dangerouslySetInnerHTML={{__html: svg}} />
+                    <div style={{width: "100%"}}>
+                        <Typography noWrap variant="h4">
+                            <AccountTreeIcon sx={{fontSize: 28, marginRight: '5px'}} />
+                            Diagram
+                        </Typography>
+                        <ButtonGroup variant="contained" sx={{marginTop: '5px'}}>
+                            <Button key="downloadDiagramFileButton" size="small">
+                                <DownloadIcon style={{marginRight:"5px"}} /> Download
+                            </Button>
+                        </ButtonGroup>
+                    </div>
+                    <>
+                        <span dangerouslySetInnerHTML={{__html: svg}} />
+                    </>
                 </div>
             </Box>
         </Box>
