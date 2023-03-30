@@ -148,7 +148,7 @@ function App() {
                             <ModeEditIcon style={{marginRight:"5px"}} /> Rename
                         </Button>}
                         <Button key="downloadSketchFileButton" size="small">
-                            <DownloadIcon style={{marginRight:"5px"}} /> Download
+                            <DownloadIcon style={{marginRight:"5px"}} /> Download (he)
                         </Button>
                     </ButtonGroup>
                     <div style={{
@@ -168,8 +168,11 @@ function App() {
                             Diagram
                         </Typography>
                         <ButtonGroup variant="contained" sx={{marginTop: '5px'}}>
-                            <Button key="downloadDiagramFileButton" size="small">
-                                <DownloadIcon style={{marginRight:"5px"}} /> Download
+                            <Button key="downloadDiagramPNGFileButton" size="small">
+                                <DownloadIcon style={{marginRight:"5px"}} /> Download (png)
+                            </Button>
+                            <Button key="downloadDiagramSVGFileButton" size="small">
+                                <DownloadIcon style={{marginRight:"5px"}} /> Download (svg)
                             </Button>
                         </ButtonGroup>
                     </div>
