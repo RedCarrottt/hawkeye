@@ -4,8 +4,11 @@ import axios from 'axios';
 import Editor from '@monaco-editor/react';
 import { Box, CssBaseline, AppBar, Toolbar, Typography } from '@mui/material';
 import { Button, FormControlLabel, Switch } from '@mui/material';
+import { Modal, List, ListItem, ListItemButton , ListItemIcon, ListItemText } from '@mui/material';
 import CodeIcon from '@mui/icons-material/Code';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import ExploreOutlinedIcon from '@mui/icons-material/ExploreOutlined';
+import ArticleIcon from '@mui/icons-material/Article';
 
 function App() {
     const editorRef = useRef(null);
@@ -13,6 +16,7 @@ function App() {
     const [svgUrl, setSvgUrl] = React.useState("");
     const [svg, setSvg] = React.useState("");
     const [autoRefreshSwitch, setAutoRefreshSwitch] = React.useState(true);
+    const [fileSelectorOpened, setFileSelectorOpened] = React.useState(false);
 
     function handleEditorDidMount(editor, monaco) {
         editorRef.current = editor;
@@ -33,14 +37,15 @@ function App() {
                         });
     }
 
-    function onFileListButtonClicked() {
+    function onSelectFileButtonClicked() {
+        setFileSelectorOpened(true);
     }
-
-    function onRefreshButtonClicked() {
-        refreshResults();
+    function onCloseFileSelector() {
+        setFileSelectorOpened(false);
     }
 
     function onKeyDown(e) {
+        // TODO:
     }
 
     function onAutoRefreshSwitchChange(e) {
@@ -81,10 +86,17 @@ function App() {
     };
 
     const menuItems = [
-        ['File List', 'fileList', onFileListButtonClicked],
+        ['Select File', 'selectFile', onSelectFileButtonClicked],
+    ]
+
+    const fileList = [
+        "File A",
+        "File B",
+        "File C"
     ]
 
     return (
+        <>
         <Box sx={{ display: 'flex' }}>
             <CssBaseline />
             <AppBar component="nav">
@@ -105,7 +117,7 @@ function App() {
             <Box sx={{ display: { xs: 'none', sm: 'block', width: "100%", textAlign:'center', margin: "10px"} }}>
                 <Toolbar />
                 <div style={{width: "50%", float: "left", textAlign:'left'}}>
-                    <Typography variant="h4"><CodeIcon /> Sketch Editor</Typography>
+                    <Typography variant="h4"><CodeIcon sx={{fontSize: 28}} /> Sketch Editor</Typography>
                     <div style={{
                         border: "2px solid",
                         margin: "10px"}}>
@@ -117,11 +129,37 @@ function App() {
                     </div>
                 </div>
                 <div style={{width: "50%", textAlign:"left", float: "left", textAlign:'left'}}>
-                    <Typography variant="h4"><AccountTreeIcon /> Results</Typography>
+                    <Typography variant="h4"><AccountTreeIcon sx={{fontSize: 28}} /> Results</Typography>
                     <span dangerouslySetInnerHTML={{__html: svg}} />
                 </div>
             </Box>
         </Box>
+        <Modal
+          open={fileSelectorOpened}
+          onClose={onCloseFileSelector}
+          aria-labelledby="file-selector-title"
+          aria-describedby="file-selector-description" >
+          <Box sx={{position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%, -50%)', width: '80%', height: '50%',
+              bgcolor: 'background.paper', border: '2px solid #000',
+              boxShadow: 24, p: 4,
+          }}>
+            <Typography id="file-selector-title" variant="h4">
+                <ExploreOutlinedIcon sx={{fontSize: 28}} /> File Selector
+            </Typography>
+            <List id="file-selector-description" sx={{ mt: 2 }}>
+                {fileList.map((fileItem) => 
+                    <ListItem disablePadding>
+                        <ListItemButton>
+                            <ListItemIcon><ArticleIcon /></ListItemIcon>
+                            <ListItemText primary={fileItem} />
+                        </ListItemButton>
+                    </ListItem>
+                )}
+            </List>
+          </Box>
+        </Modal>
+      </>
     );
     }
 
