@@ -158,6 +158,10 @@ function App() {
         });
     }
 
+    function onNewFileButtonClicked() {
+        // TODO:
+    }
+
     function onSelectFileButtonClicked() {
         setFileSelectorOpened(true);
         updateFileSelectorList();
@@ -250,6 +254,7 @@ function App() {
     };
 
     const menuItems = [
+        ['New File', 'newFile', onNewFileButtonClicked],
         ['Select File', 'selectFile', onSelectFileButtonClicked],
     ]
 
