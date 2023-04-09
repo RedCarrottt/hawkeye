@@ -19,8 +19,10 @@ function App() {
     const [svgUrl, setSvgUrl] = React.useState("");
     const [svg, setSvg] = React.useState("");
     const [autoRefreshSwitch, setAutoRefreshSwitch] = React.useState(true);
+    const [saveButtonEnabled, setSaveButtonEnabled] = React.useState(true);
     const [fileSelectorOpened, setFileSelectorOpened] = React.useState(false);
     const [filename, setFilename] = React.useState("hello.he");
+    const [fileSelectorList, setFileSelectorList] = React.useState([]);
     const [editingFilename, setEditingFilename] = React.useState(false);
 
     function handleEditorDidMount(editor, monaco) {
@@ -33,22 +35,32 @@ function App() {
 
     function refreshDiagram() {
         var code = editorRef.current.getValue();
-        console.log(code)
-            axios.post('http://localhost:3001/sketcher', {text: code})
+        axios.post('http://localhost:3001/sketcher', {text: code})
             .then(function(response) {
-                    setSvg(response.data.svg);
+                setSvg(response.data.svg);
+                }).catch(function(exception) {
+                    console.log(exception);
+                    });
+    }
+
+    function onFileItemClicked(fileItem) {
+        setFileSelectorOpened(false);
+        axios.get('http://localhost:3001/workspace/' + fileItem)
+            .then(function(response) {
+                    console.log(response.data);
                     }).catch(function(exception) {
                         console.log(exception);
                         });
     }
 
-    function onFileItemClicked() {
-        // TODO: select file
-        setFileSelectorOpened(false);
-    }
-
     function onSelectFileButtonClicked() {
         setFileSelectorOpened(true);
+        axios.get('http://localhost:3001/workspace')
+            .then(function(response) {
+                    setFileSelectorList(response.data.files);
+                    }).catch(function(exception) {
+                        console.log(exception);
+                        });
     }
     function onCloseFileSelector() {
         setFileSelectorOpened(false);
@@ -99,12 +111,6 @@ function App() {
         ['Select File', 'selectFile', onSelectFileButtonClicked],
     ]
 
-    const fileList = [
-        "File A",
-        "File B",
-        "File C"
-    ]
-
     return (
         <>
         <Box sx={{ display: 'flex' }}>
@@ -112,6 +118,11 @@ function App() {
             <AppBar component="nav">
                 <Toolbar>
                     <Typography variant="h4" style={{marginRight:"20px"}}>HawkEye</Typography>
+                    <Button key="save"
+                        color="inherit" variant="outlined" disabled={!saveButtonEnabled} style={{marginRight:"20px"}}
+                        >
+                        {(saveButtonEnabled) ? "Save" : "Saved"}
+                    </Button>
                     {menuItems.map((menuItem) => 
                         <Button key={menuItem[1]} 
                             color="inherit" variant="outlined" style={{marginRight:"20px"}}
@@ -196,9 +207,9 @@ function App() {
                 <ExploreOutlinedIcon sx={{fontSize: 28}} /> File Selector
             </Typography>
             <List id="file-selector-description" sx={{ mt: 2 }}>
-                {fileList.map((fileItem) => 
+                {fileSelectorList.map((fileItem) => 
                     <ListItem disablePadding>
-                        <ListItemButton onClick={onFileItemClicked}>
+                        <ListItemButton onClick={() => { onFileItemClicked(fileItem) }}>
                             <ListItemIcon><ArticleIcon /></ListItemIcon>
                             <ListItemText primary={fileItem} />
                         </ListItemButton>
