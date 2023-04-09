@@ -14,18 +14,21 @@ import CheckIcon from '@mui/icons-material/Check';
 import DownloadIcon from '@mui/icons-material/Download';
 
 var saveScheduled = false;
+var stateBeforeRenaming = {}
 var filename = "hello.he";
 
 function App() {
     const editorRef = useRef(null);
+    const [editorEditable, setEditorEditable] = React.useState(false);
     const initialCode = "";
+    const [displayedFilename, setDisplayedFilename] = React.useState(filename);
     const [svgUrl, setSvgUrl] = React.useState("");
     const [svg, setSvg] = React.useState("");
     const [autoRefreshSwitch, setAutoRefreshSwitch] = React.useState(true);
     const [saveButtonEnabled, setSaveButtonEnabled] = React.useState(false);
     const [fileSelectorOpened, setFileSelectorOpened] = React.useState(false);
     const [fileSelectorList, setFileSelectorList] = React.useState([]);
-    const [editingFilename, setEditingFilename] = React.useState(false);
+    const [renamingFilename, setRenamingFilename] = React.useState(false);
     const [nowLoading, setNowLoading] = React.useState(true);
 
     function handleEditorDidMount(editor, monaco) {
@@ -46,6 +49,33 @@ function App() {
                     console.log(exception);
                     });
     }
+
+    function startRenaming() {
+        stateBeforeRenaming = {
+            saveScheduled: saveScheduled,
+            filename: filename
+        };
+        saveScheduled = false;
+        setRenamingFilename(true);
+        setEditorEditable(false);
+    }
+
+    function finishRenaming() {
+        var recoverState = () => {
+            setEditorEditable(true);
+            setRenamingFilename(false);
+        };
+        if (stateBeforeRenaming.filename == filename) {
+            recoverState();
+        } else {
+            saveCurrentFile(() => {
+                deleteFile(stateBeforeRenaming.filename,
+                    () => {
+                    recoverState();
+                });
+            });
+        }
+    }
     
     function saveWatcher() {
         if (saveScheduled) {
@@ -59,6 +89,7 @@ function App() {
 
     function loadCurrentFile() {
         console.log("load from " + filename);
+        setEditorEditable(false);
         setNowLoading(true);
         axios.get('http://localhost:3001/workspace/' + filename)
             .then(function(response) {
@@ -66,8 +97,11 @@ function App() {
                     editorRef.current.setValue(response.data);
                     setSaveButtonEnabled(false);
                     setNowLoading(false);
+                    setEditorEditable(true);
                     }).catch(function(exception) {
                         console.log(exception);
+                        setNowLoading(false);
+                        setEditorEditable(true);
                         });
     }
 
@@ -79,7 +113,7 @@ function App() {
             .then(function(response) {
                 if (response.data.isSuccess) {
                     setSaveButtonEnabled(false);
-                    if(postFunction)
+                    if (postFunction)
                         postFunction();
                 } else {
                     saveScheduled = true;
@@ -91,10 +125,33 @@ function App() {
                     });
     }
 
+    function deleteFile(targetFilename, postFunction) {
+        console.log("delete " + targetFilename);
+        var code = editorRef.current.getValue();
+        saveScheduled = false;
+        axios.delete('http://localhost:3001/workspace/' + targetFilename)
+            .then(function(response) {
+                if (response.data.isSuccess) {
+                    if (postFunction)
+                        postFunction();
+                } else {
+                    console.log(response.data.message);
+                    if (postFunction)
+                        postFunction();
+                }
+                }).catch(function(exception) {
+                    console.log(exception);
+                    if (postFunction)
+                        postFunction();
+                    });
+    }
+
+
     function onFileItemClicked(fileItem) {
         setFileSelectorOpened(false);
         saveCurrentFile(() => {
             filename = fileItem;
+            setDisplayedFilename(filename);
             loadCurrentFile();
         });
     }
@@ -191,22 +248,22 @@ function App() {
                 <div style={{width: "50%", float: "left", textAlign:'left'}}>
                     <Typography noWrap variant="h4">
                         <ArticleIcon sx={{fontSize: 28, marginRight: '5px'}} />
-                        {(editingFilename) ?
+                        {(renamingFilename) ?
                             <>
-                                <TextField id="outlined-basic" variant="outlined" size="small" value={filename} sx={{width: "80%"}}
-                                    onChange={(e) => { filename = e.target.value; }}/>
+                                <TextField id="outlined-basic" variant="outlined" size="small" value={displayedFilename} sx={{width: "80%"}}
+                                    onChange={(e) => { filename = e.target.value; setDisplayedFilename(filename); }}/>
                             </> :
-                            <>{filename}
+                            <>{displayedFilename}
                            </>}
                     </Typography>
                     <ButtonGroup variant="contained" sx={{marginTop: '5px'}}>
-                        {(editingFilename) ?
+                        {(renamingFilename) ?
                         <Button key="confirmFilenameButton" size="small"
-                            onClick={() => { setEditingFilename(false); }}>
+                            onClick={() => { finishRenaming(); }}>
                             <CheckIcon style={{marginRight:"5px"}} /> Confirm File Name
                         </Button> :
                         <Button key="editFilenameButton" size="small"
-                            onClick={() => { setEditingFilename(true); }}>
+                            onClick={() => { startRenaming(); }}>
                             <ModeEditIcon style={{marginRight:"5px"}} /> Rename
                         </Button>}
                         <Button key="downloadSketchFileButton" size="small">
@@ -220,7 +277,7 @@ function App() {
                         defaultValue={initialCode} defaultLanguage="python"
                         height="80vh"
                         onMount={handleEditorDidMount}
-                        onChange={onEditorChange} />
+                        onChange={onEditorChange} options={{readOnly: !editorEditable}}/>
                     </div>
                 </div>
                 <div style={{width: "50%", textAlign:"left", float: "left", textAlign:'left'}}>

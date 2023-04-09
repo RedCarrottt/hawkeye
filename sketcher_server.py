@@ -36,20 +36,29 @@ def get_workspace_files():
         ret_files.append(file)
     return {'isSuccess': True, 'files': ret_files}
 
-@app.route('/workspace/<file_name>', methods=['GET'])
-def get_workspace_file(file_name):
+@app.route('/workspace/<file_name>', methods=['GET', 'POST', 'DELETE'])
+def do_workspace_file(file_name):
     global files_dir
-    return send_file('{}/{}'.format(files_dir, file_name))
-
-@app.route('/workspace/<file_name>', methods=['POST'])
-def post_workspace_file(file_name):
-    global files_dir
-    try:
-        with open('{}/{}'.format(files_dir, file_name), 'w') as f:
-            f.write(request.json.get('text'))
-        return {'isSuccess': True}
-    except Exception as e:
-        return {'isSuccess': False, 'message': str(e)}
+    if request.method == 'GET':
+        filepath = '{}/{}'.format(files_dir, file_name)
+        return send_file(filepath)
+    elif request.method == 'POST':
+        try:
+            filepath = '{}/{}'.format(files_dir, file_name)
+            with open(filepath, 'w') as f:
+                f.write(request.json.get('text'))
+            return {'isSuccess': True}
+        except Exception as e:
+            return {'isSuccess': False, 'message': str(e)}
+    elif request.method == 'DELETE':
+        try:
+            filepath = '{}/{}'.format(files_dir, file_name)
+            if not os.path.exists(filepath):
+                return {'isSuccess': False, 'message': "File {} does not exist".format(file_name)}
+            os.remove(filepath)
+            return {'isSuccess': True}
+        except Exception as e:
+            return {'isSuccess': False, 'message': str(e)}
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=3001)
