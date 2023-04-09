@@ -5,6 +5,7 @@ import Editor from '@monaco-editor/react';
 import { Box, CssBaseline, AppBar, Toolbar, Typography, Backdrop, CircularProgress } from '@mui/material';
 import { Button, ButtonGroup, FormControlLabel, Switch, TextField } from '@mui/material';
 import { Modal, List, ListItem, ListItemButton , ListItemIcon, ListItemText } from '@mui/material';
+import { Menu, MenuItem } from '@mui/material';
 import CodeIcon from '@mui/icons-material/Code';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ExploreOutlinedIcon from '@mui/icons-material/ExploreOutlined';
@@ -30,6 +31,7 @@ function App() {
     const [fileSelectorList, setFileSelectorList] = React.useState([]);
     const [renamingFilename, setRenamingFilename] = React.useState(false);
     const [nowLoading, setNowLoading] = React.useState(true);
+    const [contextMenu, setContextMenu] = React.useState(null);
 
     function handleEditorDidMount(editor, monaco) {
         editorRef.current = editor;
@@ -158,11 +160,19 @@ function App() {
 
     function onSelectFileButtonClicked() {
         setFileSelectorOpened(true);
+        updateFileSelectorList();
+    }
+
+    function updateFileSelectorList(postFunction) {
         axios.get('http://localhost:3001/workspace')
             .then(function(response) {
                     setFileSelectorList(response.data.files);
+                    if (postFunction)
+                        postFunction();
                     }).catch(function(exception) {
                         console.log(exception);
+                        if (postFunction)
+                            postFunction();
                         });
     }
 
@@ -189,6 +199,31 @@ function App() {
         saveScheduled = true;
         if (autoRefreshSwitch)
             refreshDiagram();
+    }
+
+    function handleContextMenu(event, menuItemFilename) {
+        console.log(filename);
+        event.preventDefault();
+        const deleteEnabled = (filename != menuItemFilename);
+        setContextMenu(contextMenu === null ?
+            {
+                mouseX: event.clientX + 2,
+                mouseY: event.clientY - 6,
+                filename: menuItemFilename,
+                deleteEnabled: deleteEnabled
+            } : null, );
+    }
+
+    function onContextMenuClose() {
+        setContextMenu(null);
+    }
+
+    function onDeleteContextMenuItemClicked() {
+        deleteFile(contextMenu.filename, () => {
+                updateFileSelectorList(() => {
+                    onContextMenuClose();
+                });
+        });
     }
 
     useEffect(() => {
@@ -317,7 +352,8 @@ function App() {
             <List id="file-selector-description" sx={{ mt: 2 }}>
                 {fileSelectorList.map((fileItem) => 
                     <ListItem disablePadding>
-                        <ListItemButton onClick={() => { onFileItemClicked(fileItem) }}>
+                        <ListItemButton onClick={() => { onFileItemClicked(fileItem) }}
+                            onContextMenu={(e) => {handleContextMenu(e, fileItem); }}>
                             <ListItemIcon><ArticleIcon /></ListItemIcon>
                             <ListItemText primary={fileItem} />
                         </ListItemButton>
@@ -326,6 +362,12 @@ function App() {
             </List>
           </Box>
         </Modal>
+        <Menu open={contextMenu != null}
+            onClose={onContextMenuClose}
+            anchorReference="anchorPosition"
+            anchorPosition={contextMenu !== null ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined} >
+            <MenuItem disabled={contextMenu !== null ? !contextMenu.deleteEnabled : true} onClick={onDeleteContextMenuItemClicked}>Delete</MenuItem>
+        </Menu>
         <Backdrop sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
             open={nowLoading}>
                 <CircularProgress color="inherit" />
