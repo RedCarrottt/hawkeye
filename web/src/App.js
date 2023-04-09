@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect, useRef } from 'react'
 import axios from 'axios';
 import Editor from '@monaco-editor/react';
-import { Box, CssBaseline, AppBar, Toolbar, Typography } from '@mui/material';
+import { Box, CssBaseline, AppBar, Toolbar, Typography, Backdrop, CircularProgress } from '@mui/material';
 import { Button, ButtonGroup, FormControlLabel, Switch, TextField } from '@mui/material';
 import { Modal, List, ListItem, ListItemButton , ListItemIcon, ListItemText } from '@mui/material';
 import CodeIcon from '@mui/icons-material/Code';
@@ -13,24 +13,28 @@ import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import CheckIcon from '@mui/icons-material/Check';
 import DownloadIcon from '@mui/icons-material/Download';
 
+var saveScheduled = false;
+var filename = "hello.he";
+
 function App() {
     const editorRef = useRef(null);
-    const initialCode = "Function A:\n  Function B";
+    const initialCode = "";
     const [svgUrl, setSvgUrl] = React.useState("");
     const [svg, setSvg] = React.useState("");
     const [autoRefreshSwitch, setAutoRefreshSwitch] = React.useState(true);
-    const [saveButtonEnabled, setSaveButtonEnabled] = React.useState(true);
+    const [saveButtonEnabled, setSaveButtonEnabled] = React.useState(false);
     const [fileSelectorOpened, setFileSelectorOpened] = React.useState(false);
-    const [filename, setFilename] = React.useState("hello.he");
     const [fileSelectorList, setFileSelectorList] = React.useState([]);
     const [editingFilename, setEditingFilename] = React.useState(false);
+    const [nowLoading, setNowLoading] = React.useState(true);
 
     function handleEditorDidMount(editor, monaco) {
         editorRef.current = editor;
         setTimeout(() => {
+            loadCurrentFile();
             refreshDiagram();
             changeAutoRefresh(true);
-        }, 2000);
+        }, 1000);
     }
 
     function refreshDiagram() {
@@ -42,15 +46,57 @@ function App() {
                     console.log(exception);
                     });
     }
+    
+    function saveWatcher() {
+        if (saveScheduled) {
+            saveCurrentFile();
+        }
+    }
 
-    function onFileItemClicked(fileItem) {
-        setFileSelectorOpened(false);
-        axios.get('http://localhost:3001/workspace/' + fileItem)
+    function onSaveButtonClicked() {
+        saveCurrentFile();
+    }
+
+    function loadCurrentFile() {
+        console.log("load from " + filename);
+        setNowLoading(true);
+        axios.get('http://localhost:3001/workspace/' + filename)
             .then(function(response) {
-                    console.log(response.data);
+                    saveScheduled = false;
+                    editorRef.current.setValue(response.data);
+                    setSaveButtonEnabled(false);
+                    setNowLoading(false);
                     }).catch(function(exception) {
                         console.log(exception);
                         });
+    }
+
+    function saveCurrentFile(postFunction) {
+        console.log("save to " + filename);
+        var code = editorRef.current.getValue();
+        saveScheduled = false;
+        axios.post('http://localhost:3001/workspace/' + filename, {text: code})
+            .then(function(response) {
+                if (response.data.isSuccess) {
+                    setSaveButtonEnabled(false);
+                    if(postFunction)
+                        postFunction();
+                } else {
+                    saveScheduled = true;
+                    console.log(response.data.message);
+                }
+                }).catch(function(exception) {
+                    saveScheduled = true;
+                    console.log(exception);
+                    });
+    }
+
+    function onFileItemClicked(fileItem) {
+        setFileSelectorOpened(false);
+        saveCurrentFile(() => {
+            filename = fileItem;
+            loadCurrentFile();
+        });
     }
 
     function onSelectFileButtonClicked() {
@@ -62,6 +108,7 @@ function App() {
                         console.log(exception);
                         });
     }
+
     function onCloseFileSelector() {
         setFileSelectorOpened(false);
     }
@@ -81,12 +128,15 @@ function App() {
     }
 
     function onEditorChange() {
+        setSaveButtonEnabled(true);
+        saveScheduled = true;
         if (autoRefreshSwitch)
             refreshDiagram();
     }
 
     useEffect(() => {
             document.addEventListener('keydown', onKeyDown);
+            setInterval(() => {saveWatcher();}, 2000);
             }, []);
 
     const [anchorElNav, setAnchorElNav] = React.useState(null);
@@ -120,6 +170,7 @@ function App() {
                     <Typography variant="h4" style={{marginRight:"20px"}}>HawkEye</Typography>
                     <Button key="save"
                         color="inherit" variant="outlined" disabled={!saveButtonEnabled} style={{marginRight:"20px"}}
+                        onClick={onSaveButtonClicked}
                         >
                         {(saveButtonEnabled) ? "Save" : "Saved"}
                     </Button>
@@ -143,7 +194,7 @@ function App() {
                         {(editingFilename) ?
                             <>
                                 <TextField id="outlined-basic" variant="outlined" size="small" value={filename} sx={{width: "80%"}}
-                                    onChange={(e) => { setFilename(e.target.value); }}/>
+                                    onChange={(e) => { filename = e.target.value; }}/>
                             </> :
                             <>{filename}
                            </>}
@@ -218,6 +269,10 @@ function App() {
             </List>
           </Box>
         </Modal>
+        <Backdrop sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            open={nowLoading}>
+                <CircularProgress color="inherit" />
+        </Backdrop>
       </>
     );
     }

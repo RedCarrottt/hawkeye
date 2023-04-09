@@ -29,7 +29,12 @@ def get_workspace_files():
         return {'isSuccess': False, 'files': [],
             'message': '{} is not a directory!'.format(files_dir)}
     files = os.listdir(files_dir)
-    return {'isSuccess': True, 'files': files}
+    ret_files = []
+    for file in files:
+        if file.startswith('.'):
+            continue
+        ret_files.append(file)
+    return {'isSuccess': True, 'files': ret_files}
 
 @app.route('/workspace/<file_name>', methods=['GET'])
 def get_workspace_file(file_name):
