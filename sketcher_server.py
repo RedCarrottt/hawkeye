@@ -68,7 +68,7 @@ def get_workspace_files():
         files = os.listdir(files_dir)
         ret_files = []
         for file in files:
-            if file.startswith('.'):
+            if file.startswith('.') or not file.endswith('.he'):
                 continue
             ret_files.append(file)
         return {'isSuccess': True, 'files': ret_files}

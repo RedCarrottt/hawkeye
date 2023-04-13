@@ -67,6 +67,10 @@ function App() {
             setEditorEditable(true);
             setRenamingFilename(false);
         };
+        if (!filename.endsWith('.he')) {
+            alert("File name should ends with '.he'.");
+            return;
+        }
         if (stateBeforeRenaming.filename == filename) {
             recoverState();
         } else {
