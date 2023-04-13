@@ -89,7 +89,7 @@ function App() {
         saveCurrentFile();
     }
 
-    function loadCurrentFile() {
+    function loadCurrentFile(postFunction) {
         console.log("load from " + filename);
         setEditorEditable(false);
         setNowLoading(true);
@@ -100,10 +100,14 @@ function App() {
                     setSaveButtonEnabled(false);
                     setNowLoading(false);
                     setEditorEditable(true);
+                    if (postFunction)
+                        postFunction();
                     }).catch(function(exception) {
                         console.log(exception);
                         setNowLoading(false);
                         setEditorEditable(true);
+                        if (postFunction)
+                            postFunction();
                         });
     }
 
@@ -159,7 +163,17 @@ function App() {
     }
 
     function onNewFileButtonClicked() {
-        // TODO:
+        axios.post('http://localhost:3001/workspace')
+            .then(function(response) {
+                    filename = response.data.filename;
+                    setDisplayedFilename(filename);
+                    loadCurrentFile(() => {
+                        startRenaming();
+                        }).catch(function(exception) {
+                            console.log(exception);
+                            alert(exception);
+                            });
+                    });
     }
 
     function onSelectFileButtonClicked() {

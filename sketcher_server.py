@@ -20,31 +20,50 @@ def post_sketcher():
 def get_results_file(path):
     return send_from_directory("results", path)
 
-@app.route('/workspace', methods=['GET'])
+@app.route('/workspace', methods=['GET', 'POST'])
 def get_workspace_files():
     global files_dir
-    if not os.path.exists(files_dir):
-        os.mkdir(files_dir)
-    elif not os.path.isdir(files_dir):
-        return {'isSuccess': False, 'files': [],
-            'message': '{} is not a directory!'.format(files_dir)}
-    files = os.listdir(files_dir)
-    ret_files = []
-    for file in files:
-        if file.startswith('.'):
-            continue
-        ret_files.append(file)
-    return {'isSuccess': True, 'files': ret_files}
+    if request.method == 'GET':
+        if not os.path.exists(files_dir):
+            os.mkdir(files_dir)
+        elif not os.path.isdir(files_dir):
+            return {'isSuccess': False, 'files': [],
+                'message': '{} is not a directory!'.format(files_dir)}
+        files = os.listdir(files_dir)
+        ret_files = []
+        for file in files:
+            if file.startswith('.'):
+                continue
+            ret_files.append(file)
+        return {'isSuccess': True, 'files': ret_files}
+    elif request.method == 'POST':
+        # Get the new file
+        count = 0
+        new_filename = None
+        while True:
+            if count == 0:
+                new_filename = "new_file.he"
+            else:
+                new_filename = "new_file_{}.he".format(count)
+            new_filepath = os.path.join(files_dir, new_filename)
+            if not os.path.exists(new_filepath):
+                break
+            count += 1
 
-@app.route('/workspace/<file_name>', methods=['GET', 'POST', 'DELETE'])
-def do_workspace_file(file_name):
+        initial_code = "{}:\n    hello".format(new_filename)
+        with open(new_filepath, 'w+') as f:
+            f.write(initial_code)
+        return {'isSuccess': True, 'filename': new_filename}
+
+@app.route('/workspace/<filename>', methods=['GET', 'POST', 'DELETE'])
+def do_workspace_file(filename):
     global files_dir
     if request.method == 'GET':
-        filepath = '{}/{}'.format(files_dir, file_name)
+        filepath = os.path.join(files_dir, filename)
         return send_file(filepath)
     elif request.method == 'POST':
         try:
-            filepath = '{}/{}'.format(files_dir, file_name)
+            filepath = os.path.join(files_dir, filename)
             with open(filepath, 'w') as f:
                 f.write(request.json.get('text'))
             return {'isSuccess': True}
@@ -52,9 +71,9 @@ def do_workspace_file(file_name):
             return {'isSuccess': False, 'message': str(e)}
     elif request.method == 'DELETE':
         try:
-            filepath = '{}/{}'.format(files_dir, file_name)
+            filepath = os.path.join(files_dir, filename)
             if not os.path.exists(filepath):
-                return {'isSuccess': False, 'message': "File {} does not exist".format(file_name)}
+                return {'isSuccess': False, 'message': "File {} does not exist".format(filename)}
             os.remove(filepath)
             return {'isSuccess': True}
         except Exception as e:
