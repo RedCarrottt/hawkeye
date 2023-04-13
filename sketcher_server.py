@@ -20,6 +20,42 @@ def post_sketcher():
 def get_results_file(path):
     return send_from_directory("results", path)
 
+@app.route('/to_png/<filename>', methods=['GET'])
+def get_png_files(filename):
+    global files_dir
+    he_filepath = os.path.join(files_dir, filename)
+    with open(he_filepath, 'r') as f:
+        text = f.read()
+    out_filename = filename
+    if not out_filename.endswith('.png'):
+        if not out_filename.endswith('.he'):
+            out_filename += '.png'
+        else:
+            out_filename = out_filename.replace('.he', '.png')
+
+    sketch = SketchParser.parse(text)
+    out_filepath = os.path.join(files_dir, out_filename)
+    Canvas().draw(sketch, out_filepath)
+    return send_file(out_filepath)
+
+@app.route('/to_svg/<filename>', methods=['GET'])
+def get_svg_files(filename):
+    global files_dir
+    he_filepath = os.path.join(files_dir, filename)
+    with open(he_filepath, 'r') as f:
+        text = f.read()
+    out_filename = filename
+    if not out_filename.endswith('.svg'):
+        if not out_filename.endswith('.he'):
+            out_filename += '.svg'
+        else:
+            out_filename = out_filename.replace('.he', '.svg')
+
+    sketch = SketchParser.parse(text)
+    out_filepath = os.path.join(files_dir, out_filename)
+    Canvas().draw(sketch, out_filepath)
+    return send_file(out_filepath)
+
 @app.route('/workspace', methods=['GET', 'POST'])
 def get_workspace_files():
     global files_dir

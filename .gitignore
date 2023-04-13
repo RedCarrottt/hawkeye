@@ -1,6 +1,7 @@
 *.swp
 *.pyc
 *.svg
+*.png
 
 node_modules
 .pnp

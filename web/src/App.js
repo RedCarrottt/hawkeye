@@ -152,6 +152,47 @@ function App() {
                     });
     }
 
+    const downloadFile = (url, filename) => {
+        fetch(url, { method: 'GET' })
+            .then((res) => { return res.blob(); })
+            .then((blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout((_) => { window.URL.revokeObjectURL(url); }, 60000);
+                a.remove();
+            })
+            .catch((err) => { console.error('err: ', err); });
+    };
+
+    const downloadRenderedFile = (filetype) => {
+        const extension = '.' + filetype;
+        const url = 'http://localhost:3001/to_' + filetype + '/' + filename;
+        var rendered_filename = filename;
+        if (!rendered_filename.endsWith('.png')) {
+            if (rendered_filename.endsWith('.he')) {
+                rendered_filename = rendered_filename.replace('.he', extension);
+            } else {
+                rendered_filename += extension;
+            }
+        }
+        downloadFile(url, rendered_filename);
+    }
+
+    function onDownloadHeClicked() {
+        downloadFile('http://localhost:3001/workspace/' + filename, filename);
+    }
+
+    function onDownloadPngClicked() {
+        downloadRenderedFile('png');
+    }
+
+    function onDownloadSvgClicked() {
+        downloadRenderedFile('svg');
+    }
 
     function onFileItemClicked(fileItem) {
         setFileSelectorOpened(false);
@@ -320,7 +361,8 @@ function App() {
                             onClick={() => { startRenaming(); }}>
                             <ModeEditIcon style={{marginRight:"5px"}} /> Rename
                         </Button>}
-                        <Button key="downloadSketchFileButton" size="small">
+                        <Button key="downloadSketchFileButton" size="small"
+                            onClick={() => { onDownloadHeClicked(); }}>
                             <DownloadIcon style={{marginRight:"5px"}} /> Download (he)
                         </Button>
                     </ButtonGroup>
@@ -341,10 +383,12 @@ function App() {
                             Diagram
                         </Typography>
                         <ButtonGroup variant="contained" sx={{marginTop: '5px'}}>
-                            <Button key="downloadDiagramPNGFileButton" size="small">
+                            <Button key="downloadDiagramPNGFileButton" size="small"
+                                onClick={() => { onDownloadPngClicked(); }}>
                                 <DownloadIcon style={{marginRight:"5px"}} /> Download (png)
                             </Button>
-                            <Button key="downloadDiagramSVGFileButton" size="small">
+                            <Button key="downloadDiagramSVGFileButton" size="small"
+                                onClick={() => { onDownloadSvgClicked(); }}>
                                 <DownloadIcon style={{marginRight:"5px"}} /> Download (svg)
                             </Button>
                         </ButtonGroup>

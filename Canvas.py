@@ -232,6 +232,8 @@ class Canvas:
         canvasElem = self.__render(diagrams)
         if filename is None:
             return canvasElem.asSvg()
+        elif filename.endswith('png'):
+            canvasElem.savePng(filename)
         else:
             canvasElem.saveSvg(filename)
             return None
