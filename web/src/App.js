@@ -18,6 +18,10 @@ var saveScheduled = false;
 var stateBeforeRenaming = {}
 var filename = "hello.he";
 
+const hostname = window.location.protocol + "//" + window.location.hostname;
+const portnum = 3001; 
+const apipath = hostname + ":" + portnum;
+
 function App() {
     const editorRef = useRef(null);
     const [editorEditable, setEditorEditable] = React.useState(false);
@@ -44,7 +48,7 @@ function App() {
 
     function refreshDiagram() {
         var code = editorRef.current.getValue();
-        axios.post('http://localhost:3001/sketcher', {text: code})
+        axios.post(apipath + '/sketcher', {text: code})
             .then(function(response) {
                 setSvg(response.data.svg);
                 }).catch(function(exception) {
@@ -97,7 +101,7 @@ function App() {
         console.log("load from " + filename);
         setEditorEditable(false);
         setNowLoading(true);
-        axios.get('http://localhost:3001/workspace/' + filename)
+        axios.get(apipath + '/workspace/' + filename)
             .then(function(response) {
                     saveScheduled = false;
                     editorRef.current.setValue(response.data);
@@ -119,7 +123,7 @@ function App() {
         console.log("save to " + filename);
         var code = editorRef.current.getValue();
         saveScheduled = false;
-        axios.post('http://localhost:3001/workspace/' + filename, {text: code})
+        axios.post(apipath + '/workspace/' + filename, {text: code})
             .then(function(response) {
                 if (response.data.isSuccess) {
                     setSaveButtonEnabled(false);
@@ -139,7 +143,7 @@ function App() {
         console.log("delete " + targetFilename);
         var code = editorRef.current.getValue();
         saveScheduled = false;
-        axios.delete('http://localhost:3001/workspace/' + targetFilename)
+        axios.delete(apipath + '/workspace/' + targetFilename)
             .then(function(response) {
                 if (response.data.isSuccess) {
                     if (postFunction)
@@ -174,7 +178,7 @@ function App() {
 
     const downloadRenderedFile = (filetype) => {
         const extension = '.' + filetype;
-        const url = 'http://localhost:3001/to_' + filetype + '/' + filename;
+        const url = apipath + '/to_' + filetype + '/' + filename;
         var rendered_filename = filename;
         if (!rendered_filename.endsWith('.png')) {
             if (rendered_filename.endsWith('.he')) {
@@ -187,7 +191,7 @@ function App() {
     }
 
     function onDownloadHeClicked() {
-        downloadFile('http://localhost:3001/workspace/' + filename, filename);
+        downloadFile(apipath + '/workspace/' + filename, filename);
     }
 
     function onDownloadPngClicked() {
@@ -208,7 +212,7 @@ function App() {
     }
 
     function onNewFileButtonClicked() {
-        axios.post('http://localhost:3001/workspace')
+        axios.post(apipath + '/workspace')
             .then(function(response) {
                     filename = response.data.filename;
                     setDisplayedFilename(filename);
@@ -227,7 +231,7 @@ function App() {
     }
 
     function updateFileSelectorList(postFunction) {
-        axios.get('http://localhost:3001/workspace')
+        axios.get(apipath + '/workspace')
             .then(function(response) {
                     setFileSelectorList(response.data.files);
                     if (postFunction)
