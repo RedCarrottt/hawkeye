@@ -45,8 +45,9 @@ class Rectangle(Diagram):
             self.stroke_width = 2
 
     def getStartLinePos(self):
+        MIN_WIDTH = 120
         X_RATIO = 0.1
-        return (self.width * X_RATIO + self.left,
+        return (MIN_WIDTH * X_RATIO + self.left,
                 self.bottom)
 
     def getEndLinePos(self):
