@@ -116,6 +116,9 @@ def __parse(strip_lines):
                 break
             word_start_idx += 1
 
+        if len(line) <= 0:
+            continue
+
         # filter END_COLON
         end_colon_found = (line[-1] == ':')
         if end_colon_found:
