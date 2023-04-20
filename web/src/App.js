@@ -401,7 +401,7 @@ function App() {
                             </Button>
                         </ButtonGroup>
                     </div>
-                    <div style={{overflowX: "scroll", overflowY: "scroll", width: "600px", height: "1024px"}}>
+                    <div style={{overflowX: "scroll", overflowY: "scroll", width: "100%", height: "80vh"}}>
                         <span dangerouslySetInnerHTML={{__html: svg}} />
                     </div>
                 </div>
