@@ -17,9 +17,12 @@ $ python3 ./hawkeye.py
 ```
 
 ## How to use by docker
-In case of x86_64,
-
+In case of x86_64, start the Hawkeye daemon with the following command. This command also update the Hawkeye to the most recent version from github.
 ```
-$ docker build ./docker/x86_64
-$ docker run -p 3000-3001:3000-3001 -it <docker ID>
+$ docker-compose --file ./docker/x86_64/docker-compose.yml up
+```
+
+Stop the Hawkeye daemon with following command.
+```
+$ docker-compose --file ./docker/x86_64/docker-compose.yml down -d
 ```
