@@ -5,23 +5,23 @@ Hawkeye is a tool to support to visualize the code graph.
 ### x86_64
 Start the Hawkeye daemon with the following command. This command also update the Hawkeye to the most recent version from github.
 ```
-$ docker-compose --file ./docker/x86_64/docker-compose.yml up
+$ docker-compose --file ./docker/x86_64/docker-compose.yml up -d
 ```
 
 Stop the Hawkeye daemon with following command.
 ```
-$ docker-compose --file ./docker/x86_64/docker-compose.yml down -d
+$ docker-compose --file ./docker/x86_64/docker-compose.yml down
 ```
 
 ### arm64
 Start the Hawkeye daemon with the following command. This command also update the Hawkeye to the most recent version from github.
 ```
-$ docker-compose --file ./docker/arm64/docker-compose.yml up
+$ docker-compose --file ./docker/arm64/docker-compose.yml up -d
 ```
 
 Stop the Hawkeye daemon with following command.
 ```
-$ docker-compose --file ./docker/arm64/docker-compose.yml down -d
+$ docker-compose --file ./docker/arm64/docker-compose.yml down
 ```
 
 ## How to use in local
