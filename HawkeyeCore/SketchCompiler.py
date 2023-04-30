@@ -260,23 +260,8 @@ def analyze_syntax(tokens):
         i += 1
     return sketch
 
-class SketchParser:
-    def read_and_parse(self, filename):
-        with open(filename, 'r') as f:
-            # orig_lines -> strip_lines -> tokens -> sketch-tree
-            orig_lines = f.readlines()
-    
-            # 1. Pre-processing: remove comments and strip right spaces
-            strip_lines = preprocess(orig_lines)
-    
-            # 2. Parsing: indent, word, colon, redirect_sign
-            tokens = parse(strip_lines)
-    
-            # 3. Syntax analysis
-            sketch = analyze_syntax(tokens)
-            return sketch
-    
-    def parse(self, text):
+class SketchCompiler:
+    def compile(self, text):
         orig_lines = text.splitlines()
     
         # 1. Pre-processing: remove comments and strip right spaces

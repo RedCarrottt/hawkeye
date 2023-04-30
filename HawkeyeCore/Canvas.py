@@ -1,6 +1,6 @@
 # HawkEye
 import drawSvg as DrawSVG
-from .SketchParser import Sketch, Node, FunctionNode, IterationNode, ForkNode, BranchNode
+from .SketchCompiler import Sketch, Node, FunctionNode, IterationNode, ForkNode, BranchNode
 from .utils import *
 
 # Coordination system

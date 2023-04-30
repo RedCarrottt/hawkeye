@@ -11,7 +11,7 @@ files_dir = './workspace'
 @app.route('/sketcher', methods=['POST'])
 def post_sketcher():
     text = request.json.get('text')
-    sketch = hc.SketchParser().parse(text)
+    sketch = hc.SketchCompiler().compile(text)
     svg = hc.Canvas().draw(sketch)
     return {"svg": svg}
 
@@ -32,7 +32,7 @@ def get_png_files(filename):
         else:
             out_filename = out_filename.replace('.he', '.png')
 
-    sketch = hc.SketchParser().parse(text)
+    sketch = hc.SketchCompiler().compile(text)
     out_filepath = os.path.join(files_dir, out_filename)
     hc.Canvas().draw(sketch, out_filepath)
     return send_file(out_filepath)
@@ -50,7 +50,7 @@ def get_svg_files(filename):
         else:
             out_filename = out_filename.replace('.he', '.svg')
 
-    sketch = hc.SketchParser().parse(text)
+    sketch = hc.SketchCompiler().compile(text)
     out_filepath = os.path.join(files_dir, out_filename)
     hc.Canvas().draw(sketch, out_filepath)
     return send_file(out_filepath)

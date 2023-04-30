@@ -1,2 +1,2 @@
-from .SketchParser import SketchParser
+from .SketchCompiler import SketchCompiler
 from .Canvas import Canvas
