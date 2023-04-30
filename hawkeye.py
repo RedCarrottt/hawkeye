@@ -12,7 +12,7 @@ args = parser.parse_args()
 
 root_dir = os.path.dirname(__file__)
 os.chdir(os.path.join(root_dir))
-sketcher_server = subprocess.Popen(['python3', './HawkeyeCore/SketcherServer.py'],
+sketcher_server = subprocess.Popen(['python3', './SketcherServer.py'],
     stdout=DEVNULL if not args.verbose else None,
     stderr=DEVNULL if not args.verbose else None)
 

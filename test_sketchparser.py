@@ -1,4 +1,4 @@
-import SketchParser
+import HawkeyeCore as hc
 
-sketch = SketchParser.read_and_parse('example_sketch.txt')
+sketch = hc.SketchParser().read_and_parse('example_sketch.txt')
 print(sketch)

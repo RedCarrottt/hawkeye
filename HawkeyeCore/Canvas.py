@@ -1,7 +1,7 @@
 # HawkEye
 import drawSvg as DrawSVG
-from SketchParser import Sketch, Node, FunctionNode, IterationNode, ForkNode, BranchNode
-import utils
+from .SketchParser import Sketch, Node, FunctionNode, IterationNode, ForkNode, BranchNode
+from .utils import *
 
 # Coordination system
 # 1) Diagrams: LU (origin at left-up)
@@ -29,7 +29,7 @@ class Rectangle(Diagram):
         self.bottom = top + HEIGHT
         self.labelText = self.labelText if not DEBUG else \
             (self.labelText + " ({},{})".format(self.left, self.bottom))
-        self.width = utils.textwidth(self.labelText, 16) + MARGIN
+        self.width = textwidth(self.labelText, 16) + MARGIN
         self.width = self.width if self.width > MIN_WIDTH else MIN_WIDTH
         self.height = HEIGHT
 

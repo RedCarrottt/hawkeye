@@ -2,8 +2,7 @@ from flask import Flask, request, send_from_directory
 from flask_cors import CORS
 from flask.helpers import send_file
 import os
-import SketchParser
-from Canvas import Canvas
+import HawkeyeCore as hc
 
 app = Flask(__name__)
 CORS(app)
@@ -12,8 +11,8 @@ files_dir = './workspace'
 @app.route('/sketcher', methods=['POST'])
 def post_sketcher():
     text = request.json.get('text')
-    sketch = SketchParser.parse(text)
-    svg = Canvas().draw(sketch)
+    sketch = hc.SketchParser().parse(text)
+    svg = hc.Canvas().draw(sketch)
     return {"svg": svg}
 
 @app.route('/results/<path:path>')
@@ -33,9 +32,9 @@ def get_png_files(filename):
         else:
             out_filename = out_filename.replace('.he', '.png')
 
-    sketch = SketchParser.parse(text)
+    sketch = hc.SketchParser().parse(text)
     out_filepath = os.path.join(files_dir, out_filename)
-    Canvas().draw(sketch, out_filepath)
+    hc.Canvas().draw(sketch, out_filepath)
     return send_file(out_filepath)
 
 @app.route('/to_svg/<filename>', methods=['GET'])
@@ -51,9 +50,9 @@ def get_svg_files(filename):
         else:
             out_filename = out_filename.replace('.he', '.svg')
 
-    sketch = SketchParser.parse(text)
+    sketch = hc.SketchParser().parse(text)
     out_filepath = os.path.join(files_dir, out_filename)
-    Canvas().draw(sketch, out_filepath)
+    hc.Canvas().draw(sketch, out_filepath)
     return send_file(out_filepath)
 
 @app.route('/workspace', methods=['GET', 'POST'])

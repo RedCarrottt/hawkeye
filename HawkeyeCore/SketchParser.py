@@ -82,13 +82,7 @@ class BranchNode(Node):
             s += '\n' + str(child)
         return s
 
-def __raise_exception(linenum, line, message):
-    return Exception("Line {}: {}\n=> {}".format(linenum, message, line))
-
-def __raise_exception2(linenum, message):
-    return Exception("Line {}: {}".format(linenum, message))
-
-def __preprocess(orig_lines):
+def preprocess(orig_lines):
     strip_lines = []
     for line in orig_lines:
         # remove comments
@@ -100,8 +94,14 @@ def __preprocess(orig_lines):
 
         strip_lines.append(strip_line)
     return strip_lines
+    
+def raise_exception(linenum, line, message):
+    return Exception("Line {}: {}\n=> {}".format(linenum, message, line))
 
-def __parse(strip_lines):
+def raise_exception2(linenum, message):
+    return Exception("Line {}: {}".format(linenum, message))
+
+def parse(strip_lines):
     tokens = []
     for linenum, line in enumerate(strip_lines):
         word_start_idx = 0
@@ -133,11 +133,11 @@ def __parse(strip_lines):
             for word in words:
                 if word == '=>':
                     if not word_found:
-                        __raise_exception(linenum, line, "Redirection sign must not be used at the start")
+                        raise_exception(linenum, line, "Redirection sign must not be used at the start")
                     elif end_colon_found:
-                        __raise_exception(linenum, line, "Redirection sign must be used without colon at the end")
+                        raise_exception(linenum, line, "Redirection sign must be used without colon at the end")
                     elif redirect_found:
-                        __raise_exception(linenum, line, "Redirection sign must be used once")
+                        raise_exception(linenum, line, "Redirection sign must be used once")
                     redirect_found = True
                     tokens.append(["REDIRECT"])
                 else:
@@ -146,7 +146,7 @@ def __parse(strip_lines):
                         word_after_redirect_found = True
                     tokens.append(["WORD", word])
                 if redirect_found and not word_after_redirect_found:
-                    __raise_exception(linenum, line, "At least a word must follow the redirection sign")
+                    raise_exception(linenum, line, "At least a word must follow the redirection sign")
 
         # END_COLON
         if end_colon_found:
@@ -156,7 +156,7 @@ def __parse(strip_lines):
         tokens.append(["NEWLINE"])
     return tokens
 
-def __analyze_syntax(tokens):
+def analyze_syntax(tokens):
     sketch = Sketch()
     nodeStack = [sketch]
 
@@ -206,11 +206,11 @@ def __analyze_syntax(tokens):
             # Check indent
             if isinstance(topNode, Sketch):
                 if indent != 0:
-                    __raise_exception2(linenum, "Invalid indent")
+                    raise_exception2(linenum, "Invalid indent")
             else:
                 if topNode.child_indent < 0:
                     if indent <= topNode.indent:
-                        __raise_exception2(linenum, "Invalid indent")
+                        raise_exception2(linenum, "Invalid indent")
                     topNode.child_indent = indent
                 else:
                     while len(nodeStack) > 1 and indent <= topNode.indent:
@@ -231,7 +231,7 @@ def __analyze_syntax(tokens):
             elif keyword == 'if':
                 # ForkNode + BranchNode
                 if len(redirect_text) > 0:
-                    __raise_exception2(linenum, "Invalid redirection sign")
+                    raise_exception2(linenum, "Invalid redirection sign")
                 forkNode = ForkNode(indent)
                 nodeStack.append(forkNode)
                 newNode = BranchNode(indent, text)
@@ -240,17 +240,17 @@ def __analyze_syntax(tokens):
             elif keyword in ['elif', 'else']:
                 # BranchNode
                 if len(redirect_text) > 0:
-                    __raise_exception2(linenum, "Invalid redirection sign")
+                    raise_exception2(linenum, "Invalid redirection sign")
                 newNode = BranchNode(indent, text)
                 topNode.children.append(newNode)
             elif keyword in ['for', 'while']:
                 # IterationNode
                 if len(redirect_text) > 0:
-                    __raise_exception2(linenum, "Invalid redirection sign")
+                    raise_exception2(linenum, "Invalid redirection sign")
                 newNode = IterationNode(indent, text)
                 topNode.children.append(newNode)
             else:
-                __raise_exception2(linenum, "Invalid keyword {}".format(keyword))
+                raise_exception2(linenum, "Invalid keyword {}".format(keyword))
 
             # Push the new node if child is expected
             if newNode and line['end_colon']:
@@ -260,30 +260,31 @@ def __analyze_syntax(tokens):
         i += 1
     return sketch
 
-def read_and_parse(filename):
-    with open(filename, 'r') as f:
-        # orig_lines -> strip_lines -> tokens -> sketch-tree
-        orig_lines = f.readlines()
-
+class SketchParser:
+    def read_and_parse(self, filename):
+        with open(filename, 'r') as f:
+            # orig_lines -> strip_lines -> tokens -> sketch-tree
+            orig_lines = f.readlines()
+    
+            # 1. Pre-processing: remove comments and strip right spaces
+            strip_lines = preprocess(orig_lines)
+    
+            # 2. Parsing: indent, word, colon, redirect_sign
+            tokens = parse(strip_lines)
+    
+            # 3. Syntax analysis
+            sketch = analyze_syntax(tokens)
+            return sketch
+    
+    def parse(self, text):
+        orig_lines = text.splitlines()
+    
         # 1. Pre-processing: remove comments and strip right spaces
-        strip_lines = __preprocess(orig_lines)
-
+        strip_lines = preprocess(orig_lines)
+    
         # 2. Parsing: indent, word, colon, redirect_sign
-        tokens = __parse(strip_lines)
-
+        tokens = parse(strip_lines)
+    
         # 3. Syntax analysis
-        sketch = __analyze_syntax(tokens)
+        sketch = analyze_syntax(tokens)
         return sketch
-
-def parse(text):
-    orig_lines = text.splitlines()
-
-    # 1. Pre-processing: remove comments and strip right spaces
-    strip_lines = __preprocess(orig_lines)
-
-    # 2. Parsing: indent, word, colon, redirect_sign
-    tokens = __parse(strip_lines)
-
-    # 3. Syntax analysis
-    sketch = __analyze_syntax(tokens)
-    return sketch
