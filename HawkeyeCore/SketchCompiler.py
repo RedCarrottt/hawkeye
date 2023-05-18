@@ -86,8 +86,20 @@ def preprocess(orig_lines):
     strip_lines = []
     for line in orig_lines:
         # remove comments
-        comment_idx = line.find('#')
-        strip_line = line[:comment_idx] if comment_idx >= 0 else line
+        strip_line = line
+        range_start = 0
+        range_end = len(line)
+        while True:
+            comment_idx = strip_line.rfind('#', range_start, range_end)
+            range_end = comment_idx - 1 if comment_idx > 0 else 0
+            if comment_idx < 0:
+                break
+            if comment_idx > 0 and strip_line[comment_idx - 1] == '\\':
+                # \# => #
+                strip_line = strip_line[:comment_idx - 1] + strip_line[comment_idx:]
+            else:
+                # # => comment out
+                strip_line = strip_line[:comment_idx]
 
         # strip right spaces
         strip_line = strip_line.rstrip()
@@ -205,10 +217,12 @@ def analyze_syntax(tokens):
 
             # Check indent
             if isinstance(topNode, Sketch):
+                # Sketch's indent should be 0
                 if indent != 0:
                     raise_exception2(linenum, "Invalid indent")
             else:
                 if topNode.child_indent < 0:
+                    # Determine top node's child indent
                     if indent <= topNode.indent:
                         raise_exception2(linenum, "Invalid indent")
                     topNode.child_indent = indent
