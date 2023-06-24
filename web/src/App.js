@@ -248,7 +248,10 @@ function App() {
     }
 
     function onKeyDown(e) {
-        // TODO:
+        if (e.key == "s" && (e.ctrlKey || e.metaKey)) {
+            saveCurrentFile();
+            e.preventDefault();
+        }
     }
 
     function onAutoRefreshSwitchChange(e) {
@@ -354,7 +357,8 @@ function App() {
                         {(renamingFilename) ?
                             <>
                                 <TextField id="outlined-basic" variant="outlined" size="small" value={displayedFilename} sx={{width: "80%"}}
-                                    onChange={(e) => { filename = e.target.value; setDisplayedFilename(filename); }}/>
+                                    onChange={(e) => { filename = e.target.value; setDisplayedFilename(filename); }}
+                                    inputProps={{onKeyDown: (e) => {if(e.key == 'Enter') finishRenaming(); }, }}/>
                             </> :
                             <>{displayedFilename}
                            </>}
