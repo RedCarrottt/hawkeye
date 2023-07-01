@@ -7,6 +7,6 @@ services:
         - "3000-3001:3000-3001"
       volumes:
         - hawkeye-workspace:/home/hawkeye/hawkeye/workspace
-      command: bash -c "cd /home/hawkeye/hawkeye/ && git fetch && git checkout -f origin/master && python3 ./hawkeye.py"
+      command: bash -c "cd /home/hawkeye/hawkeye/ && git fetch && git checkout -f origin/master && cd web && npm install && python3 ./hawkeye.py"
 volumes:
     hawkeye-workspace:
