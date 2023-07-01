@@ -1,5 +1,6 @@
 import React from 'react';
 import { useState, useEffect, useRef } from 'react'
+import { useCookies } from 'react-cookie';
 import axios from 'axios';
 import Editor from '@monaco-editor/react';
 import { Box, CssBaseline, AppBar, Toolbar, Typography, Backdrop, CircularProgress } from '@mui/material';
@@ -16,7 +17,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 
 var saveScheduled = false;
 var stateBeforeRenaming = {}
-var filename = "hello.he";
+var filename = "";
 
 const hostname = window.location.protocol + "//" + window.location.hostname;
 const portnum = 3001; 
@@ -37,13 +38,17 @@ function App() {
     const [nowLoading, setNowLoading] = React.useState(true);
     const [contextMenu, setContextMenu] = React.useState(null);
 
+    const [cookies, setCookies] = useCookies(['filename']);
+
     function handleEditorDidMount(editor, monaco) {
         editorRef.current = editor;
         setTimeout(() => {
+            filename = (cookies.filename) ? cookies.filename : "hello.he";
+            setDisplayedFilename(filename);
             loadCurrentFile();
             refreshDiagram();
             changeAutoRefresh(true);
-        }, 1000);
+        }, 200);
     }
 
     function refreshDiagram() {
@@ -83,6 +88,7 @@ function App() {
                     () => {
                     recoverState();
                 });
+                setCookies('filename', filename);
             });
         }
     }
@@ -208,6 +214,7 @@ function App() {
             filename = fileItem;
             setDisplayedFilename(filename);
             loadCurrentFile();
+            setCookies('filename', filename);
         });
     }
 
@@ -217,6 +224,7 @@ function App() {
                     filename = response.data.filename;
                     setDisplayedFilename(filename);
                     loadCurrentFile(() => {
+                        setCookies('filename', filename);
                         startRenaming();
                         }).catch(function(exception) {
                             console.log(exception);
